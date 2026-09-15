@@ -46,7 +46,12 @@
 
   /* 头部 */
   header { padding: 6px 4px 18px; }
-  header h1 { font-size: 27px; font-weight: 800; letter-spacing: 1px; }
+  .title-row { display: flex; align-items: center; gap: 8px; }
+  .title-row h1 { flex: 1; font-size: 27px; font-weight: 800; letter-spacing: 1px; }
+  .fish { width: 46px; height: 32px; flex-shrink: 0; animation: bob 3s ease-in-out infinite; }
+  @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+  .sun { width: 32px; height: 32px; flex-shrink: 0; animation: spin 16s linear infinite; }
+  @keyframes spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
   header .date { color: var(--muted); font-size: 14px; margin-top: 6px; }
 
   /* 统计卡 */
@@ -64,16 +69,17 @@
 
   /* 添加区 */
   .add {
-    display: flex; gap: 10px; background: var(--card);
-    border-radius: var(--radius); padding: 10px; box-shadow: var(--shadow);
-    margin-bottom: 16px;
+    display: flex; flex-direction: column; gap: 10px;
+    background: var(--card); border-radius: var(--radius); padding: 10px;
+    box-shadow: var(--shadow); margin-bottom: 16px;
   }
-  .add input {
+  .add-main { display: flex; gap: 10px; }
+  .add-main input {
     flex: 1; border: none; outline: none; font-size: 16px;
     background: transparent; color: var(--text); min-width: 0;
   }
-  .add input::placeholder { color: #c9b199; }
-  .add button {
+  .add-main input::placeholder { color: #c9b199; }
+  .add-main button {
     width: 46px; height: 46px; border: none; border-radius: 14px;
     background: linear-gradient(135deg, var(--accent-2), var(--accent));
     color: #fff; font-size: 26px; line-height: 1; cursor: pointer;
@@ -81,7 +87,17 @@
     box-shadow: 0 4px 12px rgba(230, 147, 90, .35);
     transition: transform .1s, box-shadow .15s;
   }
-  .add button:active { transform: scale(.95); background: var(--accent-dark); }
+  .add-main button:active { transform: scale(.95); background: var(--accent-dark); }
+  .add-time {
+    display: flex; align-items: center; justify-content: space-between;
+    border-top: 1px dashed var(--line); padding-top: 9px;
+  }
+  .add-time-label { font-size: 13px; color: var(--muted); }
+  .add-time input[type="time"] {
+    border: none; outline: none; background: #fdf1e4;
+    color: var(--text); font-size: 15px; font-weight: 600;
+    border-radius: 10px; padding: 6px 10px; font-family: inherit;
+  }
 
   /* 列表 */
   ul { list-style: none; }
@@ -113,6 +129,12 @@
     flex: 1; font-size: 16px; word-break: break-all; line-height: 1.4;
   }
   li.done .text { color: #c0a790; text-decoration: line-through; }
+  li .time {
+    flex-shrink: 0; font-size: 12px; font-weight: 600;
+    color: var(--accent-dark); background: #fdf1e4;
+    border-radius: 20px; padding: 4px 9px;
+  }
+  li.done .time { color: #c0a790; background: #f6f1e9; }
   li .del {
     border: none; background: none; color: #dcc8b4; font-size: 22px;
     cursor: pointer; width: 32px; height: 32px; line-height: 1;
@@ -138,7 +160,28 @@
 <body>
 <div class="app">
   <header>
-    <h1>小鱼的每日待办</h1>
+    <div class="title-row">
+      <h1>小鱼的每日待办</h1>
+      <svg class="fish" viewBox="0 0 100 68" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M95.5 34C95.5 45.0457 86.5457 54 75.5 54C64.4543 54 55.5 45.0457 55.5 34C55.5 22.9543 64.4543 14 75.5 14C86.5457 14 95.5 22.9543 95.5 34Z" fill="#f3b57f"/>
+        <path d="M75.5 54C75.5 54 65 62 50 62C35 62 24.5 54 24.5 54" stroke="#e8935a" stroke-width="3" stroke-linecap="round"/>
+        <path d="M24.5 34C24.5 34 15 26 5 26" stroke="#e8935a" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="85.5" cy="34" r="3" fill="#4a3a2d"/>
+      </svg>
+      <svg class="sun" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="30" cy="30" r="12" fill="#f6c85f"/>
+        <g stroke="#f6c85f" stroke-width="3" stroke-linecap="round">
+          <line x1="30" y1="6" x2="30" y2="14"/>
+          <line x1="30" y1="46" x2="30" y2="54"/>
+          <line x1="6" y1="30" x2="14" y2="30"/>
+          <line x1="46" y1="30" x2="54" y2="30"/>
+          <line x1="13" y1="13" x2="19" y2="19"/>
+          <line x1="41" y1="41" x2="47" y2="47"/>
+          <line x1="13" y1="47" x2="19" y2="41"/>
+          <line x1="41" y1="19" x2="47" y2="13"/>
+        </g>
+      </svg>
+    </div>
     <div class="date" id="dateLabel"></div>
   </header>
 
@@ -160,8 +203,14 @@
   </section>
 
   <section class="add">
-    <input id="input" type="text" placeholder="添加今日待办..." maxlength="200">
-    <button id="addBtn" aria-label="添加">+</button>
+    <div class="add-main">
+      <input id="input" type="text" placeholder="添加今日待办..." maxlength="200">
+      <button id="addBtn" aria-label="添加">+</button>
+    </div>
+    <div class="add-time">
+      <span class="add-time-label">任务时间（可选）</span>
+      <input id="timeInput" type="time">
+    </div>
   </section>
 
   <ul id="list"></ul>
@@ -252,6 +301,12 @@
 
         li.appendChild(check);
         li.appendChild(text);
+        if (t.time) {
+          var time = document.createElement('div');
+          time.className = 'time';
+          time.textContent = t.time;
+          li.appendChild(time);
+        }
         li.appendChild(del);
         ul.appendChild(li);
       });
@@ -265,15 +320,17 @@
   }
 
   // ----- 操作 -----
-  function addTodo(text) {
+  function addTodo(text, time) {
     text = (text || '').trim();
     if (!text) return;
-    data.todos.push({
+    var todo = {
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
       text: text,
       done: false,
       date: todayStr()
-    });
+    };
+    if (time) todo.time = time;
+    data.todos.push(todo);
     save();
     render();
   }
@@ -295,8 +352,10 @@
 
     document.getElementById('addBtn').addEventListener('click', function () {
       var input = document.getElementById('input');
-      addTodo(input.value);
+      var timeInput = document.getElementById('timeInput');
+      addTodo(input.value, timeInput.value);
       input.value = '';
+      timeInput.value = '';
       input.focus();
     });
     document.getElementById('input').addEventListener('keydown', function (e) {
