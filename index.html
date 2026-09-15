@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#3b82f6">
+<meta name="theme-color" content="#fdeedd">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="小鱼的每日待办">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -15,47 +15,50 @@
 <title>小鱼的每日待办</title>
 <style>
   :root {
-    --blue: #3b82f6;
-    --blue-dark: #2563eb;
-    --bg: #f4f6fb;
-    --card: #ffffff;
-    --text: #1e293b;
-    --muted: #64748b;
-    --danger: #ef4444;
-    --green: #22c55e;
-    --radius: 16px;
-    --shadow: 0 6px 20px rgba(30, 41, 59, 0.08);
+    --accent: #e8935a;
+    --accent-2: #f3b57f;
+    --accent-dark: #d67c42;
+    --bg1: #fdeedd;
+    --bg2: #fcf7ef;
+    --card: #fffdf9;
+    --text: #4a3a2d;
+    --muted: #a98f7c;
+    --danger: #e26d56;
+    --green: #6ab47c;
+    --line: #f2e5d6;
+    --radius: 18px;
+    --shadow: 0 8px 24px rgba(183, 138, 94, .14);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-    background: linear-gradient(160deg, #e0eaff 0%, #f4f6fb 40%);
+    background: linear-gradient(165deg, var(--bg1) 0%, var(--bg2) 55%);
     color: var(--text);
     -webkit-font-smoothing: antialiased;
   }
   .app {
     max-width: 480px;
     margin: 0 auto;
-    padding: 20px 16px calc(40px + env(safe-area-inset-bottom));
+    padding: 24px 16px calc(40px + env(safe-area-inset-bottom));
     min-height: 100%;
   }
 
   /* 头部 */
-  header { padding: 6px 4px 16px; }
-  header h1 { font-size: 26px; font-weight: 700; letter-spacing: 0.5px; }
+  header { padding: 6px 4px 18px; }
+  header h1 { font-size: 27px; font-weight: 800; letter-spacing: 1px; }
   header .date { color: var(--muted); font-size: 14px; margin-top: 6px; }
 
   /* 统计卡 */
-  .stats {
-    display: flex; gap: 12px; margin-bottom: 16px;
-  }
+  .stats { display: flex; gap: 12px; margin-bottom: 16px; }
   .stat {
-    flex: 1; background: var(--card); border-radius: var(--radius);
-    padding: 14px 16px; box-shadow: var(--shadow);
+    flex: 1; border-radius: var(--radius); padding: 16px;
+    box-shadow: var(--shadow);
   }
-  .stat .num { font-size: 26px; font-weight: 700; }
-  .stat .label { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .stat .num { font-size: 28px; font-weight: 800; letter-spacing: .5px; }
+  .stat .label { color: var(--muted); font-size: 12px; margin-top: 3px; }
+  .stat.pending { background: #fff1ea; }
+  .stat.done { background: #eef6ef; }
   .stat.pending .num { color: var(--danger); }
   .stat.done .num { color: var(--green); }
 
@@ -69,25 +72,27 @@
     flex: 1; border: none; outline: none; font-size: 16px;
     background: transparent; color: var(--text); min-width: 0;
   }
-  .add input::placeholder { color: #94a3b8; }
+  .add input::placeholder { color: #c9b199; }
   .add button {
-    width: 46px; height: 46px; border: none; border-radius: 12px;
-    background: var(--blue); color: #fff; font-size: 26px; line-height: 1;
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
-    transition: background .15s;
+    width: 46px; height: 46px; border: none; border-radius: 14px;
+    background: linear-gradient(135deg, var(--accent-2), var(--accent));
+    color: #fff; font-size: 26px; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(230, 147, 90, .35);
+    transition: transform .1s, box-shadow .15s;
   }
-  .add button:active { background: var(--blue-dark); }
+  .add button:active { transform: scale(.95); background: var(--accent-dark); }
 
   /* 列表 */
   ul { list-style: none; }
   .empty {
     text-align: center; color: var(--muted); font-size: 14px;
-    padding: 40px 0; background: var(--card); border-radius: var(--radius);
+    padding: 44px 0; background: var(--card); border-radius: var(--radius);
     box-shadow: var(--shadow); margin-bottom: 16px;
   }
   li {
     display: flex; align-items: center; gap: 12px;
-    background: var(--card); padding: 14px 14px; border-radius: 14px;
+    background: var(--card); padding: 15px 14px; border-radius: 16px;
     box-shadow: var(--shadow); margin-bottom: 10px;
     animation: slideIn .2s ease;
   }
@@ -96,8 +101,8 @@
     to { opacity: 1; transform: translateY(0); }
   }
   .check {
-    width: 24px; height: 24px; border-radius: 50%;
-    border: 2px solid #cbd5e1; flex-shrink: 0; cursor: pointer;
+    width: 25px; height: 25px; border-radius: 50%; flex-shrink: 0;
+    border: 2px solid #e3c8ad; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     color: #fff; transition: all .15s;
   }
@@ -107,69 +112,18 @@
   li .text {
     flex: 1; font-size: 16px; word-break: break-all; line-height: 1.4;
   }
-  li.done .text { color: #94a3b8; text-decoration: line-through; }
+  li.done .text { color: #c0a790; text-decoration: line-through; }
   li .del {
-    border: none; background: none; color: #cbd5e1; font-size: 22px;
+    border: none; background: none; color: #dcc8b4; font-size: 22px;
     cursor: pointer; width: 32px; height: 32px; line-height: 1;
     border-radius: 8px; flex-shrink: 0; transition: color .15s;
   }
   li .del:active { color: var(--danger); }
 
-  /* 设置 */
-  .settings {
-    background: var(--card); border-radius: var(--radius);
-    box-shadow: var(--shadow); padding: 16px; margin-top: 8px;
-  }
-  .settings h2 { font-size: 14px; color: var(--muted); font-weight: 600; margin-bottom: 14px; }
-  .row {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 0;
-  }
-  .row + .row { border-top: 1px solid #f1f5f9; }
-  .row .lbl { font-size: 15px; }
-  .row .lbl small { color: var(--muted); font-weight: 400; }
-  .time-row { flex-direction: column; align-items: stretch; gap: 8px; }
-
-  /* 滚动时间选择器 */
-  .time-wheel-frame {
-    position: relative; height: 180px; overflow: hidden;
-    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px;
-  }
-  .wheel-highlight {
-    position: absolute; left: 12px; right: 12px; top: 50%; transform: translateY(-50%);
-    height: 46px; background: #e1efff; border-radius: 12px; pointer-events: none;
-  }
-  .time-wheel {
-    position: absolute; inset: 0; overflow-y: auto;
-    scroll-snap-type: y mandatory; -webkit-overflow-scrolling: touch;
-    padding: 67px 0; scrollbar-width: none;
-  }
-  .time-wheel::-webkit-scrollbar { display: none; }
-  .time-wheel .opt {
-    height: 46px; line-height: 46px; text-align: center;
-    font-size: 17px; font-weight: 600; color: #cbd5e1;
-    scroll-snap-align: center; cursor: pointer; transition: color .15s;
-  }
-  .time-wheel .opt.active { color: var(--blue); font-size: 23px; font-weight: 800; }
-  .switch { position: relative; width: 48px; height: 28px; }
-  .switch input { opacity: 0; width: 0; height: 0; }
-  .switch .track {
-    position: absolute; inset: 0; background: #cbd5e1; border-radius: 14px;
-    transition: background .2s; cursor: pointer;
-  }
-  .switch .track::after {
-    content: ""; position: absolute; width: 22px; height: 22px;
-    left: 3px; top: 3px; background: #fff; border-radius: 50%;
-    transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2);
-  }
-  .switch input:checked + .track { background: var(--blue); }
-  .switch input:checked + .track::after { transform: translateX(20px); }
-  .hint { color: #94a3b8; font-size: 12px; margin-top: 12px; line-height: 1.6; }
-
   /* 安装到主屏幕提示条 */
   .install-bar {
     display: flex; align-items: center; gap: 10px;
-    background: #1e293b; color: #fff; border-radius: 14px;
+    background: #4a3a2d; color: #fff; border-radius: 16px;
     padding: 12px 14px; margin-bottom: 16px; box-shadow: var(--shadow);
   }
   .install-bar .msg { flex: 1; font-size: 14px; line-height: 1.5; }
@@ -177,40 +131,8 @@
     border: none; border-radius: 10px; padding: 9px 14px;
     font-size: 14px; font-weight: 600; cursor: pointer; flex-shrink: 0;
   }
-  .install-bar .do { background: var(--blue); color: #fff; }
-  .install-bar .no { background: transparent; color: #cbd5e1; }
-
-  /* 弹窗遮罩 */
-  .overlay {
-    position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45);
-    display: none; align-items: flex-end; justify-content: center; z-index: 100;
-  }
-  .overlay.show { display: flex; }
-  .modal {
-    background: #fff; width: 100%; max-width: 480px;
-    border-radius: 20px 20px 0 0; padding: 24px 20px calc(24px + env(safe-area-inset-bottom));
-    animation: slideUp .25s ease;
-  }
-  @keyframes slideUp {
-    from { transform: translateY(40px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-  }
-  .modal h3 { font-size: 18px; margin-bottom: 6px; }
-  .modal .sub { color: var(--muted); font-size: 14px; margin-bottom: 16px; }
-  .modal ul { margin-bottom: 18px; }
-  .modal li {
-    box-shadow: none; border: 1px solid #f1f5f9; margin-bottom: 8px;
-    padding: 12px 14px; animation: none;
-  }
-  .modal li .check { width: 8px; height: 8px; border: none; background: #f472b6; }
-  .modal li .check svg { display: none; }
-  .modal li .text { font-size: 15px; }
-  .modal .primary {
-    width: 100%; padding: 14px; border: none; border-radius: 12px;
-    background: var(--blue); color: #fff; font-size: 16px; font-weight: 600;
-    cursor: pointer;
-  }
-  .modal .primary:active { background: var(--blue-dark); }
+  .install-bar .do { background: var(--accent); color: #fff; }
+  .install-bar .no { background: transparent; color: #d9c8b8; }
 </style>
 </head>
 <body>
@@ -244,34 +166,6 @@
 
   <ul id="list"></ul>
   <div class="empty" id="empty" style="display:none">今天还没有待办，添加一项开始吧</div>
-
-  <section class="settings">
-    <h2>提醒设置</h2>
-    <div class="row time-row">
-      <div class="lbl">每日提醒时间</div>
-      <div class="time-wheel-frame">
-        <div class="wheel-highlight"></div>
-        <div class="time-wheel" id="timeWheel"></div>
-      </div>
-    </div>
-    <div class="row">
-      <div class="lbl">启用提醒<small>（未完成时弹窗）</small></div>
-      <label class="switch">
-        <input type="checkbox" id="reminderEnabled" checked>
-        <span class="track"></span>
-      </label>
-    </div>
-    <p class="hint">提示：到设定时间后，打开应用时若有未完成事项会自动弹出提醒。应用关闭或退到后台时无法主动提醒（这是浏览器限制），请养成打开应用看一眼的习惯。</p>
-  </section>
-</div>
-
-<div class="overlay" id="overlay">
-  <div class="modal">
-    <h3>待办提醒</h3>
-    <div class="sub">你还有以下事项未完成</div>
-    <ul id="remindList"></ul>
-    <button class="primary" id="dismissBtn">知道了</button>
-  </div>
 </div>
 
 <script>
@@ -284,31 +178,21 @@
   }
   function pad(n) { return (n < 10 ? '0' : '') + n; }
 
-  function defaultData() {
-    return {
-      settings: { reminderTime: '18:00', reminderEnabled: true, lastRemindedDate: '' },
-      todos: []
-    };
-  }
-
-  var data = defaultData();
+  var data = { todos: [] };
   function load() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         var p = JSON.parse(raw);
-        data = {
-          settings: Object.assign(defaultData().settings, p.settings || {}),
-          todos: p.todos || []
-        };
+        data = { todos: p.todos || [] };
       }
-    } catch (e) { data = defaultData(); }
+    } catch (e) { data = { todos: [] }; }
   }
   function save() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   }
 
-  // 跨天处理：未完成事项顺延到今日，清理过久的历史
+  // 跨天处理：未完成事项顺延到今日，清理 7 天前的历史
   function rollover() {
     var today = todayStr();
     var cutoff = new Date();
@@ -325,6 +209,9 @@
   function todaysTodos() {
     var today = todayStr();
     return data.todos.filter(function (t) { return t.date === today; });
+  }
+  function find(id) {
+    return data.todos.find(function (t) { return t.id === id; });
   }
 
   // ----- 渲染 -----
@@ -399,49 +286,8 @@
     save();
     render();
   }
-  function find(id) {
-    return data.todos.find(function (t) { return t.id === id; });
-  }
 
-  // ----- 提醒 -----
-  function unfinishedToday() {
-    var today = todayStr();
-    return data.todos.filter(function (t) { return t.date === today && !t.done; });
-  }
-
-  function checkReminder() {
-    if (!data.settings.reminderEnabled) return;
-    var now = new Date();
-    var parts = (data.settings.reminderTime || '18:00').split(':');
-    var rem = new Date();
-    rem.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10), 0, 0);
-
-    var today = todayStr();
-    if (now >= rem && data.settings.lastRemindedDate !== today) {
-      data.settings.lastRemindedDate = today;
-      save();
-      var pending = unfinishedToday();
-      if (pending.length > 0) triggerReminder(pending);
-    }
-  }
-
-  function triggerReminder(pending) {
-    showModal(pending);
-  }
-
-  function showModal(pending) {
-    var ul = document.getElementById('remindList');
-    ul.innerHTML = '';
-    pending.forEach(function (t) {
-      var li = document.createElement('li');
-      li.innerHTML = '<div class="check"></div><div class="text"></div>';
-      li.querySelector('.text').textContent = t.text;
-      ul.appendChild(li);
-    });
-    document.getElementById('overlay').classList.add('show');
-  }
-
-  // ----- 初始化与事件绑定 -----
+  // ----- 初始化 -----
   function init() {
     load();
     rollover();
@@ -457,101 +303,9 @@
       if (e.key === 'Enter') document.getElementById('addBtn').click();
     });
 
-    // 滚动时间选择器
-    var wheel = document.getElementById('timeWheel');
-    var OPT_H = 46;
-    var wheelOpts = [];
-    for (var h = 0; h < 24; h++) {
-      for (var m = 0; m < 60; m += 30) {
-        wheelOpts.push({ label: pad(h) + ':' + pad(m), h: h, m: m });
-      }
-    }
-    for (var i = 0; i < wheelOpts.length; i++) {
-      var opt = document.createElement('div');
-      opt.className = 'opt';
-      opt.textContent = wheelOpts[i].label;
-      opt.dataset.idx = i;
-      wheel.appendChild(opt);
-    }
-
-    var parts = (data.settings.reminderTime || '18:00').split(':');
-    var curH = parseInt(parts[0], 10); if (isNaN(curH) || curH < 0 || curH > 23) curH = 18;
-    var curM = parseInt(parts[1], 10); if (isNaN(curM) || curM < 0 || curM > 59) curM = 0;
-
-    function persistTime() {
-      data.settings.reminderTime = pad(curH) + ':' + pad(curM);
-      save();
-    }
-    function nearestIndex(h, m) {
-      var target = h * 60 + m;
-      var best = 0, bestDiff = Infinity;
-      for (var i = 0; i < wheelOpts.length; i++) {
-        var v = wheelOpts[i].h * 60 + wheelOpts[i].m;
-        var diff = Math.abs(v - target);
-        if (diff < bestDiff) { bestDiff = diff; best = i; }
-      }
-      return best;
-    }
-    function clampIdx(idx) {
-      if (idx < 0) idx = 0;
-      if (idx >= wheelOpts.length) idx = wheelOpts.length - 1;
-      return idx;
-    }
-    function updateHighlight(idx) {
-      var opts = wheel.querySelectorAll('.opt');
-      for (var i = 0; i < opts.length; i++) {
-        opts[i].classList.toggle('active', i === idx);
-      }
-    }
-    function commitTime(idx) {
-      idx = clampIdx(idx);
-      var o = wheelOpts[idx];
-      curH = o.h; curM = o.m;
-      persistTime();
-      updateHighlight(idx);
-    }
-
-    var initIdx = nearestIndex(curH, curM);
-    wheel.scrollTop = initIdx * OPT_H;
-    updateHighlight(initIdx);
-
-    var wheelTimer = null;
-    wheel.addEventListener('scroll', function () {
-      var idx = clampIdx(Math.round(wheel.scrollTop / OPT_H));
-      updateHighlight(idx);
-      clearTimeout(wheelTimer);
-      wheelTimer = setTimeout(function () { commitTime(idx); }, 150);
-    });
-    wheel.addEventListener('click', function (e) {
-      var el = e.target;
-      if (el && el.classList && el.classList.contains('opt')) {
-        var idx = parseInt(el.dataset.idx, 10);
-        wheel.scrollTo({ top: idx * OPT_H, behavior: 'smooth' });
-        commitTime(idx);
-      }
-    });
-
-    var enabled = document.getElementById('reminderEnabled');
-    enabled.checked = data.settings.reminderEnabled !== false;
-    enabled.addEventListener('change', function () {
-      data.settings.reminderEnabled = enabled.checked;
-      save();
-    });
-
-    document.getElementById('dismissBtn').addEventListener('click', function () {
-      document.getElementById('overlay').classList.remove('show');
-    });
-
     render();
 
-    // 打开页面即检查一次（若已过提醒时间）
-    checkReminder();
-    // 每天跨天时重置提醒状态并检查
-    setInterval(function () {
-      if (data.settings.lastRemindedDate !== todayStr()) checkReminder();
-    }, 30000);
-
-    // 定时重新渲染，保证跨天后日期与统计刷新
+    // 定时刷新，保证跨天后日期与统计更新
     setInterval(function () {
       renderDate();
       rollover();
