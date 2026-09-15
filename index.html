@@ -112,6 +112,59 @@
     transition: transform .1s, box-shadow .15s;
   }
   .add button:active { transform: scale(.95); background: var(--accent-dark); }
+  /* 固定任务的添加按钮：绿色系区分 */
+  .add.add-fixed button {
+    background: linear-gradient(135deg, #8cc9a0, var(--green));
+    box-shadow: 0 4px 12px rgba(106, 180, 124, .35);
+  }
+  .add.add-fixed button:active { background: #5aa06c; }
+
+  /* 板块标题 */
+  .section-title { display: flex; align-items: center; gap: 8px; margin: 2px 2px 10px; }
+  .section-title .dot {
+    width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--accent-2), var(--accent));
+  }
+  .section-title.st-fixed .dot { background: var(--green); }
+  .section-title .st-name { font-size: 15px; font-weight: 800; color: var(--text); }
+  .section-title .st-sub {
+    font-size: 11px; color: var(--muted);
+    background: #faf1e6; border-radius: 20px; padding: 3px 8px;
+  }
+
+  /* 未完成顺延询问弹窗 */
+  .modal-mask {
+    position: fixed; inset: 0; background: rgba(74, 58, 45, .42);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 50; padding: 24px;
+  }
+  .modal {
+    background: var(--card); border-radius: 22px; padding: 22px 18px;
+    width: 100%; max-width: 320px;
+    box-shadow: 0 16px 40px rgba(74, 58, 45, .28);
+    animation: popIn .22s ease;
+  }
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(.92) translateY(10px); }
+    to { opacity: 1; transform: none; }
+  }
+  .modal .modal-title { font-size: 17px; font-weight: 800; text-align: center; }
+  .modal .modal-text { font-size: 14px; color: var(--muted); line-height: 1.7; text-align: center; margin-top: 6px; }
+  .modal .modal-list {
+    margin: 12px 0 0; background: #faf3ea; border-radius: 12px;
+    padding: 10px 12px; max-height: 150px; overflow: auto;
+  }
+  .modal .modal-list li { font-size: 13px; color: var(--text); padding: 4px 0; }
+  .modal .modal-btns { display: flex; gap: 10px; margin-top: 16px; }
+  .modal .modal-btns button {
+    flex: 1; border: none; border-radius: 12px; padding: 11px 0;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+  }
+  .modal .m-no { background: #f3e8da; color: var(--muted); }
+  .modal .m-yes {
+    background: linear-gradient(135deg, var(--accent-2), var(--accent));
+    color: #fff; box-shadow: 0 4px 12px rgba(230, 147, 90, .35);
+  }
 
   /* 列表 */
   ul { list-style: none; }
@@ -225,18 +278,45 @@
     </div>
   </section>
 
+  <div class="section-title">
+    <span class="dot"></span><span class="st-name">每日待办</span>
+    <span class="st-sub">次日自动清除</span>
+  </div>
   <section class="add">
     <input id="input" type="text" placeholder="添加今日待办..." maxlength="200">
     <button id="addBtn" aria-label="添加">+</button>
   </section>
-
   <ul id="list"></ul>
   <div class="empty" id="empty" style="display:none">今天还没有待办，添加一项开始吧</div>
+
+  <div class="section-title st-fixed">
+    <span class="dot"></span><span class="st-name">每天固定任务</span>
+    <span class="st-sub">每天自动出现</span>
+  </div>
+  <section class="add add-fixed">
+    <input id="fixedInput" type="text" placeholder="添加每天固定任务..." maxlength="200">
+    <button id="fixedAddBtn" aria-label="添加">+</button>
+  </section>
+  <ul id="fixedList"></ul>
+  <div class="empty" id="fixedEmpty" style="display:none">还没有固定任务，添加每天要做的事吧</div>
+</div>
+
+<!-- 未完成待办顺延询问弹窗 -->
+<div class="modal-mask" id="carryMask" style="display:none">
+  <div class="modal">
+    <div class="modal-title">未完成提醒</div>
+    <div class="modal-text">之前有 <b id="carryCount">0</b> 项待办未完成，要添加到今日待办吗？</div>
+    <ul class="modal-list" id="carryList"></ul>
+    <div class="modal-btns">
+      <button class="m-no" id="carryNo">不用了</button>
+      <button class="m-yes" id="carryYes">添加到今日</button>
+    </div>
+  </div>
 </div>
 
 <script>
 (function () {
-  var STORAGE_KEY = 'dailyWorkbench.v1';
+  var STORAGE_KEY = 'dailyWorkbench.v2';
 
   function todayStr() {
     var d = new Date();
@@ -244,34 +324,33 @@
   }
   function pad(n) { return (n < 10 ? '0' : '') + n; }
 
-  var data = { todos: [] };
+  var data = { todos: [], fixed: [] };
   function load() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) raw = localStorage.getItem('dailyWorkbench.v1'); // 旧版数据迁移
       if (raw) {
         var p = JSON.parse(raw);
-        data = { todos: p.todos || [] };
+        data = { todos: p.todos || [], fixed: p.fixed || [] };
       }
-    } catch (e) { data = { todos: [] }; }
+    } catch (e) { data = { todos: [], fixed: [] }; }
   }
   function save() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   }
 
-  // 跨天处理：未完成事项顺延到今日，清理 7 天前的历史
+  // 跨天处理：往日已完成的每日待办直接清掉，未完成的留给弹窗询问
   function rollover() {
     var today = todayStr();
-    var cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 7);
-    var cutoffStr = cutoff.getFullYear() + '-' + pad(cutoff.getMonth() + 1) + '-' + pad(cutoff.getDate());
-
-    data.todos = data.todos.filter(function (t) { return t.date >= cutoffStr; });
-    data.todos.forEach(function (t) {
-      if (t.date < today && !t.done) t.date = today;
-    });
+    data.todos = data.todos.filter(function (t) { return t.date >= today || !t.done; });
     save();
   }
 
+  // 之前几天遗留的未完成每日待办
+  function leftovers() {
+    var today = todayStr();
+    return data.todos.filter(function (t) { return t.date < today && !t.done; });
+  }
   function todaysTodos() {
     var today = todayStr();
     return data.todos.filter(function (t) { return t.date === today; });
@@ -279,48 +358,73 @@
   function find(id) {
     return data.todos.find(function (t) { return t.id === id; });
   }
+  function findFixed(id) {
+    return data.fixed.find(function (t) { return t.id === id; });
+  }
 
   // ----- 渲染 -----
-  function render() {
-    var list = todaysTodos();
-    var pending = list.filter(function (t) { return !t.done; });
-    var done = list.filter(function (t) { return t.done; });
+  function renderListItem(ul, t, isFixed) {
+    var li = document.createElement('li');
+    if (t.done) li.className = 'done';
 
-    document.getElementById('countPending').textContent = pending.length;
-    document.getElementById('countDone').textContent = done.length;
+    var check = document.createElement('div');
+    check.className = 'check';
+    check.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
+    check.addEventListener('click', function () {
+      if (isFixed) toggleFixed(t.id); else toggleDaily(t.id);
+    });
+
+    var text = document.createElement('div');
+    text.className = 'text';
+    text.textContent = t.text;
+
+    var del = document.createElement('button');
+    del.className = 'del';
+    del.textContent = '\u00d7';
+    del.setAttribute('aria-label', '删除');
+    del.addEventListener('click', function () {
+      if (isFixed) removeFixed(t.id); else removeDaily(t.id);
+    });
+
+    li.appendChild(check);
+    li.appendChild(text);
+    li.appendChild(del);
+    ul.appendChild(li);
+  }
+
+  function render() {
+    var today = todayStr();
+    var daily = todaysTodos();
+    var fixedView = data.fixed.map(function (f) {
+      return { id: f.id, text: f.text, done: f.doneOn === today };
+    });
+
+    var pending = daily.filter(function (t) { return !t.done; }).length
+                 + fixedView.filter(function (t) { return !t.done; }).length;
+    var done = daily.filter(function (t) { return t.done; }).length
+              + fixedView.filter(function (t) { return t.done; }).length;
+
+    document.getElementById('countPending').textContent = pending;
+    document.getElementById('countDone').textContent = done;
 
     var ul = document.getElementById('list');
     var empty = document.getElementById('empty');
     ul.innerHTML = '';
-
-    if (list.length === 0) {
+    if (daily.length === 0) {
       empty.style.display = 'block';
     } else {
       empty.style.display = 'none';
-      list.forEach(function (t) {
-        var li = document.createElement('li');
-        if (t.done) li.className = 'done';
+      daily.forEach(function (t) { renderListItem(ul, t, false); });
+    }
 
-        var check = document.createElement('div');
-        check.className = 'check';
-        check.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
-        check.addEventListener('click', function () { toggle(t.id); });
-
-        var text = document.createElement('div');
-        text.className = 'text';
-        text.textContent = t.text;
-
-        var del = document.createElement('button');
-        del.className = 'del';
-        del.textContent = '\u00d7';
-        del.setAttribute('aria-label', '删除');
-        del.addEventListener('click', function () { remove(t.id); });
-
-        li.appendChild(check);
-        li.appendChild(text);
-        li.appendChild(del);
-        ul.appendChild(li);
-      });
+    var ful = document.getElementById('fixedList');
+    var fempty = document.getElementById('fixedEmpty');
+    ful.innerHTML = '';
+    if (fixedView.length === 0) {
+      fempty.style.display = 'block';
+    } else {
+      fempty.style.display = 'none';
+      fixedView.forEach(function (t) { renderListItem(ful, t, true); });
     }
   }
 
@@ -331,26 +435,62 @@
   }
 
   // ----- 操作 -----
-  function addTodo(text) {
+  function addTodo(text, isFixed) {
     text = (text || '').trim();
     if (!text) return;
-    data.todos.push({
+    var item = {
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-      text: text,
-      done: false,
-      date: todayStr()
-    });
+      text: text
+    };
+    if (isFixed) {
+      item.doneOn = null;
+      data.fixed.push(item);
+    } else {
+      item.done = false;
+      item.date = todayStr();
+      data.todos.push(item);
+    }
     save();
     render();
   }
-  function toggle(id) {
+  function toggleDaily(id) {
     var t = find(id);
     if (t) { t.done = !t.done; save(); render(); }
   }
-  function remove(id) {
+  function toggleFixed(id) {
+    var f = findFixed(id);
+    if (f) {
+      f.doneOn = (f.doneOn === todayStr()) ? null : todayStr();
+      save();
+      render();
+    }
+  }
+  function removeDaily(id) {
     data.todos = data.todos.filter(function (t) { return t.id !== id; });
     save();
     render();
+  }
+  function removeFixed(id) {
+    data.fixed = data.fixed.filter(function (t) { return t.id !== id; });
+    save();
+    render();
+  }
+
+  // 未完成顺延询问弹窗
+  function checkCarry() {
+    var mask = document.getElementById('carryMask');
+    if (mask.style.display === 'flex') return;
+    var left = leftovers();
+    if (!left.length) return;
+    document.getElementById('carryCount').textContent = left.length;
+    var ul = document.getElementById('carryList');
+    ul.innerHTML = '';
+    left.forEach(function (t) {
+      var li = document.createElement('li');
+      li.textContent = t.text;
+      ul.appendChild(li);
+    });
+    mask.style.display = 'flex';
   }
 
   // ----- 初始化 -----
@@ -361,21 +501,47 @@
 
     document.getElementById('addBtn').addEventListener('click', function () {
       var input = document.getElementById('input');
-      addTodo(input.value);
+      addTodo(input.value, false);
       input.value = '';
       input.focus();
     });
     document.getElementById('input').addEventListener('keydown', function (e) {
       if (e.key === 'Enter') document.getElementById('addBtn').click();
     });
+    document.getElementById('fixedAddBtn').addEventListener('click', function () {
+      var input = document.getElementById('fixedInput');
+      addTodo(input.value, true);
+      input.value = '';
+      input.focus();
+    });
+    document.getElementById('fixedInput').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') document.getElementById('fixedAddBtn').click();
+    });
+
+    // 未完成顺延：带入今天 / 放弃
+    document.getElementById('carryYes').addEventListener('click', function () {
+      leftovers().forEach(function (t) { t.date = todayStr(); });
+      document.getElementById('carryMask').style.display = 'none';
+      save();
+      render();
+    });
+    document.getElementById('carryNo').addEventListener('click', function () {
+      data.todos = data.todos.filter(function (t) { return t.date >= todayStr() || t.done; });
+      document.getElementById('carryMask').style.display = 'none';
+      save();
+      render();
+    });
 
     render();
+    // 打开应用时，如有往日未完成事项，弹窗询问是否带入今天
+    checkCarry();
 
-    // 定时刷新，保证跨天后日期与统计更新
+    // 定时刷新，跨天后日期、统计与提醒弹窗自动更新
     setInterval(function () {
       renderDate();
       rollover();
       render();
+      checkCarry();
     }, 60000);
   }
 
