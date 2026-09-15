@@ -128,13 +128,37 @@
   .row + .row { border-top: 1px solid #f1f5f9; }
   .row .lbl { font-size: 15px; }
   .row .lbl small { color: var(--muted); font-weight: 400; }
-  .time-picker { display: flex; align-items: center; gap: 6px; }
-  .time-picker select {
-    border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 8px;
-    font-size: 20px; font-weight: 600; color: var(--text); background: #fff;
-    outline: none; text-align: center;
+  .time-row { flex-direction: column; align-items: stretch; gap: 12px; }
+
+  /* 快捷预设 */
+  .presets { display: flex; gap: 8px; }
+  .preset {
+    flex: 1; border: 1px solid #e2e8f0; background: #fff; color: var(--text);
+    font-size: 14px; padding: 10px 0; border-radius: 12px; cursor: pointer;
+    font-weight: 600; text-align: center; transition: all .15s;
+    -webkit-tap-highlight-color: transparent;
   }
-  .time-picker .colon { font-size: 20px; font-weight: 700; color: var(--text); }
+  .preset:active { background: #f1f5f9; }
+  .preset.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+  /* 精确微调 */
+  .time-stepper { display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .stepper {
+    display: flex; align-items: center; background: #f8fafc;
+    border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden;
+  }
+  .stepper button {
+    width: 48px; height: 52px; border: none; background: transparent;
+    color: var(--blue); font-size: 24px; line-height: 1; cursor: pointer;
+    -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+    user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+  }
+  .stepper button:active { background: #dbeafe; }
+  .stepper .val {
+    min-width: 58px; text-align: center; font-size: 28px; font-weight: 700;
+    color: var(--text); line-height: 1.2; font-variant-numeric: tabular-nums;
+  }
+  .time-stepper .colon { font-size: 26px; font-weight: 700; color: var(--muted); }
   .switch { position: relative; width: 48px; height: 28px; }
   .switch input { opacity: 0; width: 0; height: 0; }
   .switch .track {
@@ -237,12 +261,26 @@
 
   <section class="settings">
     <h2>提醒设置</h2>
-    <div class="row">
+    <div class="row time-row">
       <div class="lbl">每日提醒时间</div>
-      <div class="time-picker">
-        <select id="reminderHour"></select>
+      <div class="presets">
+        <button type="button" class="preset" data-time="07:00">7:00</button>
+        <button type="button" class="preset" data-time="12:00">12:00</button>
+        <button type="button" class="preset" data-time="18:00">18:00</button>
+        <button type="button" class="preset" data-time="21:00">21:00</button>
+      </div>
+      <div class="time-stepper">
+        <div class="stepper">
+          <button type="button" data-target="hour" data-delta="-1" aria-label="减少小时">−</button>
+          <div class="val" id="hourVal">--</div>
+          <button type="button" data-target="hour" data-delta="1" aria-label="增加小时">+</button>
+        </div>
         <span class="colon">:</span>
-        <select id="reminderMinute"></select>
+        <div class="stepper">
+          <button type="button" data-target="minute" data-delta="-5" aria-label="减少分钟">−</button>
+          <div class="val" id="minuteVal">--</div>
+          <button type="button" data-target="minute" data-delta="5" aria-label="增加分钟">+</button>
+        </div>
       </div>
     </div>
     <div class="row">
@@ -479,30 +517,67 @@
       if (e.key === 'Enter') document.getElementById('addBtn').click();
     });
 
-    var hourSel = document.getElementById('reminderHour');
-    var minuteSel = document.getElementById('reminderMinute');
+    var hourVal = document.getElementById('hourVal');
+    var minuteVal = document.getElementById('minuteVal');
     var pad2 = function (n) { return (n < 10 ? '0' : '') + n; };
-    for (var h = 0; h < 24; h++) {
-      var ho = document.createElement('option');
-      ho.value = pad2(h);
-      ho.textContent = pad2(h) + ' 时';
-      hourSel.appendChild(ho);
-    }
-    for (var m = 0; m < 60; m++) {
-      var mo = document.createElement('option');
-      mo.value = pad2(m);
-      mo.textContent = pad2(m) + ' 分';
-      minuteSel.appendChild(mo);
-    }
     var parts = (data.settings.reminderTime || '18:00').split(':');
-    hourSel.value = parts[0] || '18';
-    minuteSel.value = parts[1] || '00';
-    function updateReminderTime() {
-      data.settings.reminderTime = hourSel.value + ':' + minuteSel.value;
+    var curH = parseInt(parts[0], 10); if (isNaN(curH) || curH < 0 || curH > 23) curH = 18;
+    var curM = parseInt(parts[1], 10); if (isNaN(curM) || curM < 0 || curM > 59) curM = 0;
+    function persistTime() {
+      data.settings.reminderTime = pad2(curH) + ':' + pad2(curM);
       save();
     }
-    hourSel.addEventListener('change', updateReminderTime);
-    minuteSel.addEventListener('change', updateReminderTime);
+    function renderTime() {
+      hourVal.textContent = pad2(curH);
+      minuteVal.textContent = pad2(curM);
+      var cur = pad2(curH) + ':' + pad2(curM);
+      var chips = document.querySelectorAll('.preset');
+      for (var i = 0; i < chips.length; i++) {
+        chips[i].classList.toggle('active', chips[i].getAttribute('data-time') === cur);
+      }
+    }
+    function stepTime(target, delta) {
+      if (target === 'hour') { curH = (curH + delta + 24) % 24; }
+      else { curM = (curM + delta + 60) % 60; }
+      renderTime();
+      persistTime();
+    }
+    renderTime();
+
+    // 快捷预设：一键切换
+    var chips = document.querySelectorAll('.preset');
+    for (var i = 0; i < chips.length; i++) {
+      chips[i].addEventListener('click', function () {
+        var t = this.getAttribute('data-time').split(':');
+        curH = parseInt(t[0], 10);
+        curM = parseInt(t[1], 10);
+        renderTime();
+        persistTime();
+      });
+    }
+
+    // 精确微调：点击一次 ±1 步，长按连续
+    var timers = {};
+    var btns = document.querySelectorAll('.time-stepper .stepper button');
+    for (var i = 0; i < btns.length; i++) {
+      (function (btn) {
+        var target = btn.getAttribute('data-target');
+        var delta = parseInt(btn.getAttribute('data-delta'), 10);
+        function fire() { stepTime(target, delta); }
+        function start() {
+          fire();
+          timers[target] = setInterval(fire, 120);
+        }
+        function stop() {
+          if (timers[target]) { clearInterval(timers[target]); timers[target] = null; }
+        }
+        btn.addEventListener('pointerdown', function (e) { e.preventDefault(); start(); });
+        btn.addEventListener('pointerup', stop);
+        btn.addEventListener('pointerleave', stop);
+        btn.addEventListener('pointercancel', stop);
+        btn.addEventListener('click', function (e) { e.preventDefault(); });
+      })(btns[i]);
+    }
 
     var enabled = document.getElementById('reminderEnabled');
     enabled.checked = data.settings.reminderEnabled !== false;
