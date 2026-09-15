@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#3b82f6">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="小鱼的每日待办">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>小鱼的每日待办</title>
+<style>
+  :root {
+    --blue: #3b82f6;
+    --blue-dark: #2563eb;
+    --bg: #f4f6fb;
+    --card: #ffffff;
+    --text: #1e293b;
+    --muted: #64748b;
+    --danger: #ef4444;
+    --green: #22c55e;
+    --radius: 16px;
+    --shadow: 0 6px 20px rgba(30, 41, 59, 0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: linear-gradient(160deg, #e0eaff 0%, #f4f6fb 40%);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+  .app {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 20px 16px calc(40px + env(safe-area-inset-bottom));
+    min-height: 100%;
+  }
+
+  /* 头部 */
+  header { padding: 6px 4px 16px; }
+  header h1 { font-size: 26px; font-weight: 700; letter-spacing: 0.5px; }
+  header .date { color: var(--muted); font-size: 14px; margin-top: 6px; }
+
+  /* 统计卡 */
+  .stats {
+    display: flex; gap: 12px; margin-bottom: 16px;
+  }
+  .stat {
+    flex: 1; background: var(--card); border-radius: var(--radius);
+    padding: 14px 16px; box-shadow: var(--shadow);
+  }
+  .stat .num { font-size: 26px; font-weight: 700; }
+  .stat .label { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .stat.pending .num { color: var(--danger); }
+  .stat.done .num { color: var(--green); }
+
+  /* 添加区 */
+  .add {
+    display: flex; gap: 10px; background: var(--card);
+    border-radius: var(--radius); padding: 10px; box-shadow: var(--shadow);
+    margin-bottom: 16px;
+  }
+  .add input {
+    flex: 1; border: none; outline: none; font-size: 16px;
+    background: transparent; color: var(--text); min-width: 0;
+  }
+  .add input::placeholder { color: #94a3b8; }
+  .add button {
+    width: 46px; height: 46px; border: none; border-radius: 12px;
+    background: var(--blue); color: #fff; font-size: 26px; line-height: 1;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background .15s;
+  }
+  .add button:active { background: var(--blue-dark); }
+
+  /* 列表 */
+  ul { list-style: none; }
+  .empty {
+    text-align: center; color: var(--muted); font-size: 14px;
+    padding: 40px 0; background: var(--card); border-radius: var(--radius);
+    box-shadow: var(--shadow); margin-bottom: 16px;
+  }
+  li {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--card); padding: 14px 14px; border-radius: 14px;
+    box-shadow: var(--shadow); margin-bottom: 10px;
+    animation: slideIn .2s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .check {
+    width: 24px; height: 24px; border-radius: 50%;
+    border: 2px solid #cbd5e1; flex-shrink: 0; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; transition: all .15s;
+  }
+  li.done .check { background: var(--green); border-color: var(--green); }
+  .check svg { width: 14px; height: 14px; opacity: 0; }
+  li.done .check svg { opacity: 1; }
+  li .text {
+    flex: 1; font-size: 16px; word-break: break-all; line-height: 1.4;
+  }
+  li.done .text { color: #94a3b8; text-decoration: line-through; }
+  li .del {
+    border: none; background: none; color: #cbd5e1; font-size: 22px;
+    cursor: pointer; width: 32px; height: 32px; line-height: 1;
+    border-radius: 8px; flex-shrink: 0; transition: color .15s;
+  }
+  li .del:active { color: var(--danger); }
+
+  /* 设置 */
+  .settings {
+    background: var(--card); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 16px; margin-top: 8px;
+  }
+  .settings h2 { font-size: 14px; color: var(--muted); font-weight: 600; margin-bottom: 14px; }
+  .row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0;
+  }
+  .row + .row { border-top: 1px solid #f1f5f9; }
+  .row .lbl { font-size: 15px; }
+  .row .lbl small { color: var(--muted); font-weight: 400; }
+  input[type="time"] {
+    border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px 10px;
+    font-size: 15px; color: var(--text); background: #fff; outline: none;
+  }
+  .switch { position: relative; width: 48px; height: 28px; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch .track {
+    position: absolute; inset: 0; background: #cbd5e1; border-radius: 14px;
+    transition: background .2s; cursor: pointer;
+  }
+  .switch .track::after {
+    content: ""; position: absolute; width: 22px; height: 22px;
+    left: 3px; top: 3px; background: #fff; border-radius: 50%;
+    transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2);
+  }
+  .switch input:checked + .track { background: var(--blue); }
+  .switch input:checked + .track::after { transform: translateX(20px); }
+  .btn {
+    border: 1px solid #e2e8f0; background: #fff; color: var(--blue);
+    font-size: 14px; padding: 8px 14px; border-radius: 10px; cursor: pointer;
+    font-weight: 500;
+  }
+  .btn:active { background: #f1f5f9; }
+  .hint { color: #94a3b8; font-size: 12px; margin-top: 12px; line-height: 1.6; }
+
+  /* 安装到主屏幕提示条 */
+  .install-bar {
+    display: flex; align-items: center; gap: 10px;
+    background: #1e293b; color: #fff; border-radius: 14px;
+    padding: 12px 14px; margin-bottom: 16px; box-shadow: var(--shadow);
+  }
+  .install-bar .msg { flex: 1; font-size: 14px; line-height: 1.5; }
+  .install-bar button {
+    border: none; border-radius: 10px; padding: 9px 14px;
+    font-size: 14px; font-weight: 600; cursor: pointer; flex-shrink: 0;
+  }
+  .install-bar .do { background: var(--blue); color: #fff; }
+  .install-bar .no { background: transparent; color: #cbd5e1; }
+
+  /* 弹窗遮罩 */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45);
+    display: none; align-items: flex-end; justify-content: center; z-index: 100;
+  }
+  .overlay.show { display: flex; }
+  .modal {
+    background: #fff; width: 100%; max-width: 480px;
+    border-radius: 20px 20px 0 0; padding: 24px 20px calc(24px + env(safe-area-inset-bottom));
+    animation: slideUp .25s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(40px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .modal h3 { font-size: 18px; margin-bottom: 6px; }
+  .modal .sub { color: var(--muted); font-size: 14px; margin-bottom: 16px; }
+  .modal ul { margin-bottom: 18px; }
+  .modal li {
+    box-shadow: none; border: 1px solid #f1f5f9; margin-bottom: 8px;
+    padding: 12px 14px; animation: none;
+  }
+  .modal li .check { width: 8px; height: 8px; border: none; background: #f472b6; }
+  .modal li .check svg { display: none; }
+  .modal li .text { font-size: 15px; }
+  .modal .primary {
+    width: 100%; padding: 14px; border: none; border-radius: 12px;
+    background: var(--blue); color: #fff; font-size: 16px; font-weight: 600;
+    cursor: pointer;
+  }
+  .modal .primary:active { background: var(--blue-dark); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>小鱼的每日待办</h1>
+    <div class="date" id="dateLabel"></div>
+  </header>
+
+  <div class="install-bar" id="installBar" style="display:none">
+    <div class="msg">可将工作台添加到手机主屏幕，像 App 一样打开</div>
+    <button class="do" id="installBtn">添加</button>
+    <button class="no" id="installClose">关闭</button>
+  </div>
+
+  <section class="stats">
+    <div class="stat pending">
+      <div class="num" id="countPending">0</div>
+      <div class="label">未完成</div>
+    </div>
+    <div class="stat done">
+      <div class="num" id="countDone">0</div>
+      <div class="label">已完成</div>
+    </div>
+  </section>
+
+  <section class="add">
+    <input id="input" type="text" placeholder="添加今日待办..." maxlength="200">
+    <button id="addBtn" aria-label="添加">+</button>
+  </section>
+
+  <ul id="list"></ul>
+  <div class="empty" id="empty" style="display:none">今天还没有待办，添加一项开始吧</div>
+
+  <section class="settings">
+    <h2>提醒设置</h2>
+    <div class="row">
+      <div class="lbl">每日提醒时间</div>
+      <input type="time" id="reminderTime" value="18:00">
+    </div>
+    <div class="row">
+      <div class="lbl">启用提醒<small>（未完成时弹窗）</small></div>
+      <label class="switch">
+        <input type="checkbox" id="reminderEnabled" checked>
+        <span class="track"></span>
+      </label>
+    </div>
+    <div class="row">
+      <div class="lbl">系统通知<small>（浏览器消息弹窗）</small></div>
+      <button class="btn" id="notifyBtn">开启通知</button>
+    </div>
+    <p class="hint">提示：每天到设定时间时，若仍有未完成事项，将弹出提醒并发送系统通知。系统通知需页面保持打开或已添加到手机主屏幕，且需通过 HTTPS 访问。</p>
+  </section>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h3>待办提醒</h3>
+    <div class="sub">你还有以下事项未完成</div>
+    <ul id="remindList"></ul>
+    <button class="primary" id="dismissBtn">知道了</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  var STORAGE_KEY = 'dailyWorkbench.v1';
+
+  function todayStr() {
+    var d = new Date();
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+  function defaultData() {
+    return {
+      settings: { reminderTime: '18:00', reminderEnabled: true, lastRemindedDate: '' },
+      todos: []
+    };
+  }
+
+  var data = defaultData();
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        var p = JSON.parse(raw);
+        data = {
+          settings: Object.assign(defaultData().settings, p.settings || {}),
+          todos: p.todos || []
+        };
+      }
+    } catch (e) { data = defaultData(); }
+  }
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+
+  // 跨天处理：未完成事项顺延到今日，清理过久的历史
+  function rollover() {
+    var today = todayStr();
+    var cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 7);
+    var cutoffStr = cutoff.getFullYear() + '-' + pad(cutoff.getMonth() + 1) + '-' + pad(cutoff.getDate());
+
+    data.todos = data.todos.filter(function (t) { return t.date >= cutoffStr; });
+    data.todos.forEach(function (t) {
+      if (t.date < today && !t.done) t.date = today;
+    });
+    save();
+  }
+
+  function todaysTodos() {
+    var today = todayStr();
+    return data.todos.filter(function (t) { return t.date === today; });
+  }
+
+  // ----- 渲染 -----
+  function render() {
+    var list = todaysTodos();
+    var pending = list.filter(function (t) { return !t.done; });
+    var done = list.filter(function (t) { return t.done; });
+
+    document.getElementById('countPending').textContent = pending.length;
+    document.getElementById('countDone').textContent = done.length;
+
+    var ul = document.getElementById('list');
+    var empty = document.getElementById('empty');
+    ul.innerHTML = '';
+
+    if (list.length === 0) {
+      empty.style.display = 'block';
+    } else {
+      empty.style.display = 'none';
+      list.forEach(function (t) {
+        var li = document.createElement('li');
+        if (t.done) li.className = 'done';
+
+        var check = document.createElement('div');
+        check.className = 'check';
+        check.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
+        check.addEventListener('click', function () { toggle(t.id); });
+
+        var text = document.createElement('div');
+        text.className = 'text';
+        text.textContent = t.text;
+
+        var del = document.createElement('button');
+        del.className = 'del';
+        del.textContent = '\u00d7';
+        del.setAttribute('aria-label', '删除');
+        del.addEventListener('click', function () { remove(t.id); });
+
+        li.appendChild(check);
+        li.appendChild(text);
+        li.appendChild(del);
+        ul.appendChild(li);
+      });
+    }
+  }
+
+  function renderDate() {
+    var d = new Date();
+    var s = d.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+    document.getElementById('dateLabel').textContent = s;
+  }
+
+  // ----- 操作 -----
+  function addTodo(text) {
+    text = (text || '').trim();
+    if (!text) return;
+    data.todos.push({
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      text: text,
+      done: false,
+      date: todayStr()
+    });
+    save();
+    render();
+  }
+  function toggle(id) {
+    var t = find(id);
+    if (t) { t.done = !t.done; save(); render(); }
+  }
+  function remove(id) {
+    data.todos = data.todos.filter(function (t) { return t.id !== id; });
+    save();
+    render();
+  }
+  function find(id) {
+    return data.todos.find(function (t) { return t.id === id; });
+  }
+
+  // ----- 提醒 -----
+  function unfinishedToday() {
+    var today = todayStr();
+    return data.todos.filter(function (t) { return t.date === today && !t.done; });
+  }
+
+  function checkReminder() {
+    if (!data.settings.reminderEnabled) return;
+    var now = new Date();
+    var parts = (data.settings.reminderTime || '18:00').split(':');
+    var rem = new Date();
+    rem.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10), 0, 0);
+
+    var today = todayStr();
+    if (now >= rem && data.settings.lastRemindedDate !== today) {
+      data.settings.lastRemindedDate = today;
+      save();
+      var pending = unfinishedToday();
+      if (pending.length > 0) triggerReminder(pending);
+    }
+  }
+
+  function triggerReminder(pending) {
+    showModal(pending);
+    sendNotification(pending);
+  }
+
+  function showModal(pending) {
+    var ul = document.getElementById('remindList');
+    ul.innerHTML = '';
+    pending.forEach(function (t) {
+      var li = document.createElement('li');
+      li.innerHTML = '<div class="check"></div><div class="text"></div>';
+      li.querySelector('.text').textContent = t.text;
+      ul.appendChild(li);
+    });
+    document.getElementById('overlay').classList.add('show');
+  }
+
+  function sendNotification(pending) {
+    if (!('Notification' in window)) return;
+    if (Notification.permission !== 'granted') return;
+    var body = pending.map(function (t) { return '\u2022 ' + t.text; }).join('\n');
+    try {
+      var n = new Notification('待办提醒', {
+        body: '你有 ' + pending.length + ' 项待办未完成：\n' + body,
+        tag: 'daily-workbench'
+      });
+    } catch (e) {}
+  }
+
+  function requestNotifyPermission() {
+    if (!('Notification' in window)) {
+      updateNotifyBtn('浏览器不支持');
+      return;
+    }
+    Notification.requestPermission().then(function (p) {
+      if (p === 'granted') updateNotifyBtn('已开启');
+      else updateNotifyBtn('未授权');
+    });
+  }
+  function updateNotifyBtn(text) {
+    document.getElementById('notifyBtn').textContent = text;
+  }
+
+  // ----- 初始化与事件绑定 -----
+  function init() {
+    load();
+    rollover();
+    renderDate();
+
+    document.getElementById('addBtn').addEventListener('click', function () {
+      var input = document.getElementById('input');
+      addTodo(input.value);
+      input.value = '';
+      input.focus();
+    });
+    document.getElementById('input').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') document.getElementById('addBtn').click();
+    });
+
+    var timeInput = document.getElementById('reminderTime');
+    timeInput.value = data.settings.reminderTime || '18:00';
+    timeInput.addEventListener('change', function () {
+      data.settings.reminderTime = timeInput.value;
+      save();
+    });
+
+    var enabled = document.getElementById('reminderEnabled');
+    enabled.checked = data.settings.reminderEnabled !== false;
+    enabled.addEventListener('change', function () {
+      data.settings.reminderEnabled = enabled.checked;
+      save();
+    });
+
+    document.getElementById('notifyBtn').addEventListener('click', requestNotifyPermission);
+    document.getElementById('dismissBtn').addEventListener('click', function () {
+      document.getElementById('overlay').classList.remove('show');
+    });
+
+    if ('Notification' in window) {
+      if (Notification.permission === 'granted') updateNotifyBtn('已开启');
+      else if (Notification.permission === 'denied') updateNotifyBtn('未授权');
+    } else {
+      updateNotifyBtn('浏览器不支持');
+    }
+
+    render();
+
+    // 打开页面即检查一次（若已过提醒时间）
+    checkReminder();
+    // 每天跨天时重置提醒状态并检查
+    setInterval(function () {
+      if (data.settings.lastRemindedDate !== todayStr()) checkReminder();
+    }, 30000);
+
+    // 定时重新渲染，保证跨天后日期与统计刷新
+    setInterval(function () {
+      renderDate();
+      rollover();
+      render();
+    }, 60000);
+  }
+
+  // 安装到主屏幕（PWA）
+  var deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('installBar').style.display = 'flex';
+  });
+  document.getElementById('installBtn').addEventListener('click', function () {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt = null;
+    } else {
+      alert('请在浏览器菜单中选择「添加到桌面 / 添加到主屏幕」。');
+    }
+    document.getElementById('installBar').style.display = 'none';
+  });
+  document.getElementById('installClose').addEventListener('click', function () {
+    document.getElementById('installBar').style.display = 'none';
+  });
+  window.addEventListener('appinstalled', function () {
+    document.getElementById('installBar').style.display = 'none';
+  });
+
+  // 注册 Service Worker，实现离线可用
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(function () {});
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
