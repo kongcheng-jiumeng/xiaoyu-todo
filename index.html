@@ -47,10 +47,10 @@
   /* 头部 */
   header { padding: 6px 4px 18px; }
   .title-row { display: flex; align-items: center; gap: 8px; }
-  .title-row h1 { flex: 1; font-size: 27px; font-weight: 800; letter-spacing: 1px; }
-  .fish { width: 46px; height: 32px; flex-shrink: 0; animation: bob 3s ease-in-out infinite; }
-  @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
-  .sun { width: 32px; height: 32px; flex-shrink: 0; animation: spin 16s linear infinite; }
+  .title-row h1 { flex: 1; min-width: 0; font-size: 25px; font-weight: 800; letter-spacing: .5px; }
+  .runners { width: 82px; height: 40px; flex-shrink: 0; animation: run-bob 1.6s ease-in-out infinite; }
+  @keyframes run-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+  .sun { width: 30px; height: 30px; flex-shrink: 0; animation: spin 16s linear infinite; }
   @keyframes spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
   header .date { color: var(--muted); font-size: 14px; margin-top: 6px; }
 
@@ -89,15 +89,34 @@
   }
   .add-main button:active { transform: scale(.95); background: var(--accent-dark); }
   .add-time {
-    display: flex; align-items: center; justify-content: space-between;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
     border-top: 1px dashed var(--line); padding-top: 9px;
   }
-  .add-time-label { font-size: 13px; color: var(--muted); }
-  .add-time input[type="time"] {
-    border: none; outline: none; background: #fdf1e4;
-    color: var(--text); font-size: 15px; font-weight: 600;
-    border-radius: 10px; padding: 6px 10px; font-family: inherit;
+  .add-time-label { font-size: 13px; color: var(--muted); flex-shrink: 0; }
+  .time-picker { display: flex; align-items: center; gap: 8px; }
+  .picker-col { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .picker-col .p-val {
+    min-width: 44px; text-align: center; font-size: 20px; font-weight: 800;
+    color: var(--text); background: #fff8ef; border-radius: 10px;
+    padding: 7px 8px; line-height: 1;
   }
+  .picker-col .p-btn {
+    width: 34px; height: 24px; border: none; border-radius: 8px;
+    background: #fbf0df; color: var(--accent-dark); font-size: 16px;
+    font-weight: 700; cursor: pointer; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .12s, color .12s, transform .08s;
+  }
+  .picker-col .p-btn:active { background: var(--accent); color: #fff; transform: scale(.92); }
+  .p-colon { font-size: 20px; font-weight: 800; color: var(--text); }
+  .p-clear {
+    border: none; background: #f3e2ce; color: var(--muted); width: 27px; height: 27px;
+    border-radius: 50%; font-size: 15px; font-weight: 700; cursor: pointer;
+    flex-shrink: 0; line-height: 1; margin-left: 2px;
+  }
+  .p-clear:active { background: #e9d4bc; color: var(--danger); }
+  .p-clear:disabled { opacity: 0; pointer-events: none; }
+  .time-picker.no-time .p-val { color: var(--muted); font-weight: 600; }
 
   /* 列表 */
   ul { list-style: none; }
@@ -162,11 +181,38 @@
   <header>
     <div class="title-row">
       <h1>小鱼的每日待办</h1>
-      <svg class="fish" viewBox="0 0 100 68" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M95.5 34C95.5 45.0457 86.5457 54 75.5 54C64.4543 54 55.5 45.0457 55.5 34C55.5 22.9543 64.4543 14 75.5 14C86.5457 14 95.5 22.9543 95.5 34Z" fill="#f3b57f"/>
-        <path d="M75.5 54C75.5 54 65 62 50 62C35 62 24.5 54 24.5 54" stroke="#e8935a" stroke-width="3" stroke-linecap="round"/>
-        <path d="M24.5 34C24.5 34 15 26 5 26" stroke="#e8935a" stroke-width="3" stroke-linecap="round"/>
-        <circle cx="85.5" cy="34" r="3" fill="#4a3a2d"/>
+      <svg class="runners" viewBox="0 0 132 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <g stroke="#e9c9a6" stroke-width="2.4" stroke-linecap="round">
+          <path d="M6 16 h14"/>
+          <path d="M4 28 h16"/>
+          <path d="M8 40 h12"/>
+        </g>
+        <circle cx="37" cy="24" r="3.4" fill="#5a4632"/>
+        <circle cx="55" cy="24" r="3.4" fill="#5a4632"/>
+        <circle cx="46" cy="20" r="9" fill="#5a4632"/>
+        <circle cx="46" cy="22" r="6" fill="#fcd9b8"/>
+        <circle cx="44.4" cy="21" r="1.1" fill="#4a3a2d"/>
+        <circle cx="48.2" cy="21" r="1.1" fill="#4a3a2d"/>
+        <circle cx="43" cy="24" r="1.4" fill="#f3a8ae" opacity=".85"/>
+        <circle cx="49.5" cy="24" r="1.4" fill="#f3a8ae" opacity=".85"/>
+        <path d="M40 31 Q46 28 52 31 L56 47 L36 47 Z" fill="#f4a9a0"/>
+        <path d="M45 46 L37 58" stroke="#5a4632" stroke-width="3.4" stroke-linecap="round"/>
+        <path d="M48 46 L56 58" stroke="#5a4632" stroke-width="3.4" stroke-linecap="round"/>
+        <path d="M50 34 Q60 34 69 37" stroke="#fcd9b8" stroke-width="3.4" stroke-linecap="round"/>
+        <circle cx="100" cy="20" r="9" fill="#4a3a2d"/>
+        <circle cx="100" cy="22" r="6" fill="#fcd9b8"/>
+        <circle cx="98.4" cy="21" r="1.1" fill="#3a2a1d"/>
+        <circle cx="102.2" cy="21" r="1.1" fill="#3a2a1d"/>
+        <circle cx="97" cy="24" r="1.4" fill="#f3a8ae" opacity=".85"/>
+        <circle cx="103.5" cy="24" r="1.4" fill="#f3a8ae" opacity=".85"/>
+        <rect x="93" y="29" width="15" height="17" rx="7" fill="#e8935a"/>
+        <path d="M96 45 L88 58" stroke="#4a3a2d" stroke-width="3.4" stroke-linecap="round"/>
+        <path d="M104 45 L112 58" stroke="#4a3a2d" stroke-width="3.4" stroke-linecap="round"/>
+        <path d="M94 33 Q82 34 72 37" stroke="#fcd9b8" stroke-width="3.4" stroke-linecap="round"/>
+        <path d="M106 33 Q111 30 114 26" stroke="#fcd9b8" stroke-width="3.4" stroke-linecap="round"/>
+        <circle cx="69" cy="37" r="2" fill="#fcd9b8"/>
+        <circle cx="72" cy="37" r="2" fill="#fcd9b8"/>
+        <path transform="translate(63 24) scale(0.45)" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#e26d56"/>
       </svg>
       <svg class="sun" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="30" cy="30" r="12" fill="#f6c85f"/>
@@ -209,7 +255,20 @@
     </div>
     <div class="add-time">
       <span class="add-time-label">任务时间（可选）</span>
-      <input id="timeInput" type="time">
+      <div class="time-picker no-time" id="timePicker">
+        <div class="picker-col">
+          <button class="p-btn" data-unit="h" data-dir="up" aria-label="增加小时">+</button>
+          <div class="p-val" id="hVal">--</div>
+          <button class="p-btn" data-unit="h" data-dir="down" aria-label="减少小时">-</button>
+        </div>
+        <span class="p-colon">:</span>
+        <div class="picker-col">
+          <button class="p-btn" data-unit="m" data-dir="up" aria-label="增加分钟">+</button>
+          <div class="p-val" id="mVal">--</div>
+          <button class="p-btn" data-unit="m" data-dir="down" aria-label="减少分钟">-</button>
+        </div>
+        <button class="p-clear" id="clearTime" aria-label="清除时间" disabled>×</button>
+      </div>
     </div>
   </section>
 
@@ -344,22 +403,62 @@
     render();
   }
 
+  // ----- 任务时间选择 -----
+  var timeParts = { h: null, m: null };
+  function renderTimePicker() {
+    var hNode = document.getElementById('hVal');
+    var mNode = document.getElementById('mVal');
+    var picker = document.getElementById('timePicker');
+    var clear = document.getElementById('clearTime');
+    hNode.textContent = (timeParts.h == null) ? '--' : pad(timeParts.h);
+    mNode.textContent = (timeParts.m == null) ? '--' : pad(timeParts.m);
+    var active = (timeParts.h != null && timeParts.m != null);
+    picker.classList.toggle('no-time', !active);
+    clear.disabled = !active;
+  }
+  function adjustTime(unit, dir) {
+    if (timeParts.h == null) timeParts.h = 0;
+    if (timeParts.m == null) timeParts.m = 0;
+    if (unit === 'h') timeParts.h = (timeParts.h + dir + 24) % 24;
+    else timeParts.m = (timeParts.m + dir + 60) % 60;
+    renderTimePicker();
+  }
+  function getTimeValue() {
+    if (timeParts.h == null || timeParts.m == null) return '';
+    return pad(timeParts.h) + ':' + pad(timeParts.m);
+  }
+  function resetTimePicker() {
+    timeParts.h = null;
+    timeParts.m = null;
+    renderTimePicker();
+  }
+
   // ----- 初始化 -----
   function init() {
     load();
     rollover();
     renderDate();
+    renderTimePicker();
 
     document.getElementById('addBtn').addEventListener('click', function () {
       var input = document.getElementById('input');
-      var timeInput = document.getElementById('timeInput');
-      addTodo(input.value, timeInput.value);
+      addTodo(input.value, getTimeValue());
       input.value = '';
-      timeInput.value = '';
+      resetTimePicker();
       input.focus();
     });
     document.getElementById('input').addEventListener('keydown', function (e) {
       if (e.key === 'Enter') document.getElementById('addBtn').click();
+    });
+    document.getElementById('timePicker').addEventListener('click', function (e) {
+      var btn = e.target.closest('.p-btn');
+      if (!btn) return;
+      var unit = btn.getAttribute('data-unit');
+      var dir = btn.getAttribute('data-dir') === 'up' ? 1 : -1;
+      adjustTime(unit, dir);
+    });
+    document.getElementById('clearTime').addEventListener('click', function () {
+      resetTimePicker();
     });
 
     render();
