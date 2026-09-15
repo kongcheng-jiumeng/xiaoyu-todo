@@ -1,4 +1,4 @@
-const CACHE = 'workbench-v2';
+const CACHE = 'workbench-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -27,23 +27,23 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
+  if (new URL(req.url).origin !== self.location.origin) return;
 
   e.respondWith(
-    caches.match(req, { ignoreSearch: true }).then((cached) => {
-      const fetched = fetch(req).then((resp) => {
-        if (resp && resp.status === 200 &&
-            new URL(req.url).origin === self.location.origin) {
-          const copy = resp.clone();
-          caches.open(CACHE).then((c) => c.put(req, copy));
-        }
-        return resp;
-      }).catch(() => {
+    fetch(req).then((resp) => {
+      if (resp && resp.status === 200) {
+        const copy = resp.clone();
+        caches.open(CACHE).then((c) => c.put(req, copy));
+      }
+      return resp;
+    }).catch(() => {
+      return caches.match(req, { ignoreSearch: true }).then((cached) => {
+        if (cached) return cached;
         if (req.mode === 'navigate') {
           return caches.match('./index.html') || caches.match('./');
         }
         return undefined;
       });
-      return cached || fetched;
     })
   );
 });

@@ -128,10 +128,13 @@
   .row + .row { border-top: 1px solid #f1f5f9; }
   .row .lbl { font-size: 15px; }
   .row .lbl small { color: var(--muted); font-weight: 400; }
-  input[type="time"] {
-    border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px 10px;
-    font-size: 15px; color: var(--text); background: #fff; outline: none;
+  .time-picker { display: flex; align-items: center; gap: 6px; }
+  .time-picker select {
+    border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 8px;
+    font-size: 20px; font-weight: 600; color: var(--text); background: #fff;
+    outline: none; text-align: center;
   }
+  .time-picker .colon { font-size: 20px; font-weight: 700; color: var(--text); }
   .switch { position: relative; width: 48px; height: 28px; }
   .switch input { opacity: 0; width: 0; height: 0; }
   .switch .track {
@@ -236,7 +239,11 @@
     <h2>提醒设置</h2>
     <div class="row">
       <div class="lbl">每日提醒时间</div>
-      <input type="time" id="reminderTime" value="18:00">
+      <div class="time-picker">
+        <select id="reminderHour"></select>
+        <span class="colon">:</span>
+        <select id="reminderMinute"></select>
+      </div>
     </div>
     <div class="row">
       <div class="lbl">启用提醒<small>（未完成时弹窗）</small></div>
@@ -472,12 +479,30 @@
       if (e.key === 'Enter') document.getElementById('addBtn').click();
     });
 
-    var timeInput = document.getElementById('reminderTime');
-    timeInput.value = data.settings.reminderTime || '18:00';
-    timeInput.addEventListener('change', function () {
-      data.settings.reminderTime = timeInput.value;
+    var hourSel = document.getElementById('reminderHour');
+    var minuteSel = document.getElementById('reminderMinute');
+    var pad2 = function (n) { return (n < 10 ? '0' : '') + n; };
+    for (var h = 0; h < 24; h++) {
+      var ho = document.createElement('option');
+      ho.value = pad2(h);
+      ho.textContent = pad2(h) + ' 时';
+      hourSel.appendChild(ho);
+    }
+    for (var m = 0; m < 60; m++) {
+      var mo = document.createElement('option');
+      mo.value = pad2(m);
+      mo.textContent = pad2(m) + ' 分';
+      minuteSel.appendChild(mo);
+    }
+    var parts = (data.settings.reminderTime || '18:00').split(':');
+    hourSel.value = parts[0] || '18';
+    minuteSel.value = parts[1] || '00';
+    function updateReminderTime() {
+      data.settings.reminderTime = hourSel.value + ':' + minuteSel.value;
       save();
-    });
+    }
+    hourSel.addEventListener('change', updateReminderTime);
+    minuteSel.addEventListener('change', updateReminderTime);
 
     var enabled = document.getElementById('reminderEnabled');
     enabled.checked = data.settings.reminderEnabled !== false;
