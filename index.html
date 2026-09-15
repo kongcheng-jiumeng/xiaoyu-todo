@@ -128,37 +128,29 @@
   .row + .row { border-top: 1px solid #f1f5f9; }
   .row .lbl { font-size: 15px; }
   .row .lbl small { color: var(--muted); font-weight: 400; }
-  .time-row { flex-direction: column; align-items: stretch; gap: 12px; }
+  .time-row { flex-direction: column; align-items: stretch; gap: 8px; }
 
-  /* 快捷预设 */
-  .presets { display: flex; gap: 8px; }
-  .preset {
-    flex: 1; border: 1px solid #e2e8f0; background: #fff; color: var(--text);
-    font-size: 14px; padding: 10px 0; border-radius: 12px; cursor: pointer;
-    font-weight: 600; text-align: center; transition: all .15s;
-    -webkit-tap-highlight-color: transparent;
+  /* 滚动时间选择器 */
+  .time-wheel-frame {
+    position: relative; height: 180px; overflow: hidden;
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px;
   }
-  .preset:active { background: #f1f5f9; }
-  .preset.active { background: var(--blue); border-color: var(--blue); color: #fff; }
-
-  /* 精确微调 */
-  .time-stepper { display: flex; align-items: center; justify-content: center; gap: 8px; }
-  .stepper {
-    display: flex; align-items: center; background: #f8fafc;
-    border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden;
+  .wheel-highlight {
+    position: absolute; left: 12px; right: 12px; top: 50%; transform: translateY(-50%);
+    height: 46px; background: #e1efff; border-radius: 12px; pointer-events: none;
   }
-  .stepper button {
-    width: 48px; height: 52px; border: none; background: transparent;
-    color: var(--blue); font-size: 24px; line-height: 1; cursor: pointer;
-    -webkit-tap-highlight-color: transparent; touch-action: manipulation;
-    user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+  .time-wheel {
+    position: absolute; inset: 0; overflow-y: auto;
+    scroll-snap-type: y mandatory; -webkit-overflow-scrolling: touch;
+    padding: 67px 0; scrollbar-width: none;
   }
-  .stepper button:active { background: #dbeafe; }
-  .stepper .val {
-    min-width: 58px; text-align: center; font-size: 28px; font-weight: 700;
-    color: var(--text); line-height: 1.2; font-variant-numeric: tabular-nums;
+  .time-wheel::-webkit-scrollbar { display: none; }
+  .time-wheel .opt {
+    height: 46px; line-height: 46px; text-align: center;
+    font-size: 17px; font-weight: 600; color: #cbd5e1;
+    scroll-snap-align: center; cursor: pointer; transition: color .15s;
   }
-  .time-stepper .colon { font-size: 26px; font-weight: 700; color: var(--muted); }
+  .time-wheel .opt.active { color: var(--blue); font-size: 23px; font-weight: 800; }
   .switch { position: relative; width: 48px; height: 28px; }
   .switch input { opacity: 0; width: 0; height: 0; }
   .switch .track {
@@ -172,12 +164,6 @@
   }
   .switch input:checked + .track { background: var(--blue); }
   .switch input:checked + .track::after { transform: translateX(20px); }
-  .btn {
-    border: 1px solid #e2e8f0; background: #fff; color: var(--blue);
-    font-size: 14px; padding: 8px 14px; border-radius: 10px; cursor: pointer;
-    font-weight: 500;
-  }
-  .btn:active { background: #f1f5f9; }
   .hint { color: #94a3b8; font-size: 12px; margin-top: 12px; line-height: 1.6; }
 
   /* 安装到主屏幕提示条 */
@@ -263,24 +249,9 @@
     <h2>提醒设置</h2>
     <div class="row time-row">
       <div class="lbl">每日提醒时间</div>
-      <div class="presets">
-        <button type="button" class="preset" data-time="07:00">7:00</button>
-        <button type="button" class="preset" data-time="12:00">12:00</button>
-        <button type="button" class="preset" data-time="18:00">18:00</button>
-        <button type="button" class="preset" data-time="21:00">21:00</button>
-      </div>
-      <div class="time-stepper">
-        <div class="stepper">
-          <button type="button" data-target="hour" data-delta="-1" aria-label="减少小时">−</button>
-          <div class="val" id="hourVal">--</div>
-          <button type="button" data-target="hour" data-delta="1" aria-label="增加小时">+</button>
-        </div>
-        <span class="colon">:</span>
-        <div class="stepper">
-          <button type="button" data-target="minute" data-delta="-5" aria-label="减少分钟">−</button>
-          <div class="val" id="minuteVal">--</div>
-          <button type="button" data-target="minute" data-delta="5" aria-label="增加分钟">+</button>
-        </div>
+      <div class="time-wheel-frame">
+        <div class="wheel-highlight"></div>
+        <div class="time-wheel" id="timeWheel"></div>
       </div>
     </div>
     <div class="row">
@@ -290,11 +261,7 @@
         <span class="track"></span>
       </label>
     </div>
-    <div class="row">
-      <div class="lbl">系统通知<small>（浏览器消息弹窗）</small></div>
-      <button class="btn" id="notifyBtn">开启通知</button>
-    </div>
-    <p class="hint">提示：每天到设定时间时，若仍有未完成事项，将弹出提醒并发送系统通知。系统通知需页面保持打开或已添加到手机主屏幕，且需通过 HTTPS 访问。</p>
+    <p class="hint">提示：到设定时间后，打开应用时若有未完成事项会自动弹出提醒。应用关闭或退到后台时无法主动提醒（这是浏览器限制），请养成打开应用看一眼的习惯。</p>
   </section>
 </div>
 
@@ -460,7 +427,6 @@
 
   function triggerReminder(pending) {
     showModal(pending);
-    sendNotification(pending);
   }
 
   function showModal(pending) {
@@ -473,32 +439,6 @@
       ul.appendChild(li);
     });
     document.getElementById('overlay').classList.add('show');
-  }
-
-  function sendNotification(pending) {
-    if (!('Notification' in window)) return;
-    if (Notification.permission !== 'granted') return;
-    var body = pending.map(function (t) { return '\u2022 ' + t.text; }).join('\n');
-    try {
-      var n = new Notification('待办提醒', {
-        body: '你有 ' + pending.length + ' 项待办未完成：\n' + body,
-        tag: 'daily-workbench'
-      });
-    } catch (e) {}
-  }
-
-  function requestNotifyPermission() {
-    if (!('Notification' in window)) {
-      updateNotifyBtn('浏览器不支持');
-      return;
-    }
-    Notification.requestPermission().then(function (p) {
-      if (p === 'granted') updateNotifyBtn('已开启');
-      else updateNotifyBtn('未授权');
-    });
-  }
-  function updateNotifyBtn(text) {
-    document.getElementById('notifyBtn').textContent = text;
   }
 
   // ----- 初始化与事件绑定 -----
@@ -517,67 +457,79 @@
       if (e.key === 'Enter') document.getElementById('addBtn').click();
     });
 
-    var hourVal = document.getElementById('hourVal');
-    var minuteVal = document.getElementById('minuteVal');
-    var pad2 = function (n) { return (n < 10 ? '0' : '') + n; };
+    // 滚动时间选择器
+    var wheel = document.getElementById('timeWheel');
+    var OPT_H = 46;
+    var wheelOpts = [];
+    for (var h = 0; h < 24; h++) {
+      for (var m = 0; m < 60; m += 30) {
+        wheelOpts.push({ label: pad(h) + ':' + pad(m), h: h, m: m });
+      }
+    }
+    for (var i = 0; i < wheelOpts.length; i++) {
+      var opt = document.createElement('div');
+      opt.className = 'opt';
+      opt.textContent = wheelOpts[i].label;
+      opt.dataset.idx = i;
+      wheel.appendChild(opt);
+    }
+
     var parts = (data.settings.reminderTime || '18:00').split(':');
     var curH = parseInt(parts[0], 10); if (isNaN(curH) || curH < 0 || curH > 23) curH = 18;
     var curM = parseInt(parts[1], 10); if (isNaN(curM) || curM < 0 || curM > 59) curM = 0;
+
     function persistTime() {
-      data.settings.reminderTime = pad2(curH) + ':' + pad2(curM);
+      data.settings.reminderTime = pad(curH) + ':' + pad(curM);
       save();
     }
-    function renderTime() {
-      hourVal.textContent = pad2(curH);
-      minuteVal.textContent = pad2(curM);
-      var cur = pad2(curH) + ':' + pad2(curM);
-      var chips = document.querySelectorAll('.preset');
-      for (var i = 0; i < chips.length; i++) {
-        chips[i].classList.toggle('active', chips[i].getAttribute('data-time') === cur);
+    function nearestIndex(h, m) {
+      var target = h * 60 + m;
+      var best = 0, bestDiff = Infinity;
+      for (var i = 0; i < wheelOpts.length; i++) {
+        var v = wheelOpts[i].h * 60 + wheelOpts[i].m;
+        var diff = Math.abs(v - target);
+        if (diff < bestDiff) { bestDiff = diff; best = i; }
+      }
+      return best;
+    }
+    function clampIdx(idx) {
+      if (idx < 0) idx = 0;
+      if (idx >= wheelOpts.length) idx = wheelOpts.length - 1;
+      return idx;
+    }
+    function updateHighlight(idx) {
+      var opts = wheel.querySelectorAll('.opt');
+      for (var i = 0; i < opts.length; i++) {
+        opts[i].classList.toggle('active', i === idx);
       }
     }
-    function stepTime(target, delta) {
-      if (target === 'hour') { curH = (curH + delta + 24) % 24; }
-      else { curM = (curM + delta + 60) % 60; }
-      renderTime();
+    function commitTime(idx) {
+      idx = clampIdx(idx);
+      var o = wheelOpts[idx];
+      curH = o.h; curM = o.m;
       persistTime();
-    }
-    renderTime();
-
-    // 快捷预设：一键切换
-    var chips = document.querySelectorAll('.preset');
-    for (var i = 0; i < chips.length; i++) {
-      chips[i].addEventListener('click', function () {
-        var t = this.getAttribute('data-time').split(':');
-        curH = parseInt(t[0], 10);
-        curM = parseInt(t[1], 10);
-        renderTime();
-        persistTime();
-      });
+      updateHighlight(idx);
     }
 
-    // 精确微调：点击一次 ±1 步，长按连续
-    var timers = {};
-    var btns = document.querySelectorAll('.time-stepper .stepper button');
-    for (var i = 0; i < btns.length; i++) {
-      (function (btn) {
-        var target = btn.getAttribute('data-target');
-        var delta = parseInt(btn.getAttribute('data-delta'), 10);
-        function fire() { stepTime(target, delta); }
-        function start() {
-          fire();
-          timers[target] = setInterval(fire, 120);
-        }
-        function stop() {
-          if (timers[target]) { clearInterval(timers[target]); timers[target] = null; }
-        }
-        btn.addEventListener('pointerdown', function (e) { e.preventDefault(); start(); });
-        btn.addEventListener('pointerup', stop);
-        btn.addEventListener('pointerleave', stop);
-        btn.addEventListener('pointercancel', stop);
-        btn.addEventListener('click', function (e) { e.preventDefault(); });
-      })(btns[i]);
-    }
+    var initIdx = nearestIndex(curH, curM);
+    wheel.scrollTop = initIdx * OPT_H;
+    updateHighlight(initIdx);
+
+    var wheelTimer = null;
+    wheel.addEventListener('scroll', function () {
+      var idx = clampIdx(Math.round(wheel.scrollTop / OPT_H));
+      updateHighlight(idx);
+      clearTimeout(wheelTimer);
+      wheelTimer = setTimeout(function () { commitTime(idx); }, 150);
+    });
+    wheel.addEventListener('click', function (e) {
+      var el = e.target;
+      if (el && el.classList && el.classList.contains('opt')) {
+        var idx = parseInt(el.dataset.idx, 10);
+        wheel.scrollTo({ top: idx * OPT_H, behavior: 'smooth' });
+        commitTime(idx);
+      }
+    });
 
     var enabled = document.getElementById('reminderEnabled');
     enabled.checked = data.settings.reminderEnabled !== false;
@@ -586,17 +538,9 @@
       save();
     });
 
-    document.getElementById('notifyBtn').addEventListener('click', requestNotifyPermission);
     document.getElementById('dismissBtn').addEventListener('click', function () {
       document.getElementById('overlay').classList.remove('show');
     });
-
-    if ('Notification' in window) {
-      if (Notification.permission === 'granted') updateNotifyBtn('已开启');
-      else if (Notification.permission === 'denied') updateNotifyBtn('未授权');
-    } else {
-      updateNotifyBtn('浏览器不支持');
-    }
 
     render();
 
