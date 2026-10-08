@@ -125,6 +125,20 @@
     transition: transform .1s, box-shadow .15s;
   }
   .add button:active { transform: scale(.95); background: var(--accent-dark); }
+  .day-toggle {
+    display: flex; background: #f7ece0; border-radius: 12px; padding: 3px; flex-shrink: 0;
+  }
+  .day-toggle button {
+    width: auto; height: auto; border: none; background: transparent;
+    color: var(--muted); font-size: 12.5px; font-weight: 700; line-height: 1;
+    padding: 8px 9px; border-radius: 9px; cursor: pointer; box-shadow: none;
+    display: block;
+  }
+  .day-toggle button.on {
+    background: #fff; color: var(--accent-dark);
+    box-shadow: 0 2px 6px rgba(183, 138, 94, .2);
+  }
+  .section-title.st-tomorrow .dot { background: #a58fd0; }
   /* 固定任务的添加按钮：绿色系区分 */
   .add.add-fixed button {
     background: linear-gradient(135deg, #8cc9a0, var(--green));
@@ -418,10 +432,20 @@
   </div>
   <section class="add">
     <input id="input" type="text" placeholder="添加今日待办..." maxlength="200">
+    <div class="day-toggle" id="dayToggle">
+      <button type="button" class="on" data-day="0">今天</button>
+      <button type="button" data-day="1">明天</button>
+    </div>
     <button id="addBtn" aria-label="添加">+</button>
   </section>
   <ul id="list"></ul>
   <div class="empty" id="empty" style="display:none">今天还没有待办，添加一项开始吧</div>
+
+  <div class="section-title st-tomorrow" id="tomorrowTitle" style="display:none">
+    <span class="dot"></span><span class="st-name">明日待办</span>
+    <span class="st-sub">明天自动进入今日</span>
+  </div>
+  <ul id="tomorrowList" style="display:none"></ul>
 
   <div class="section-title st-fixed">
     <span class="dot"></span><span class="st-name">每日任务</span>
@@ -539,6 +563,15 @@
     var today = todayStr();
     return data.todos.filter(function (t) { return t.date === today; });
   }
+  function tomorrowStr() {
+    var d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+  function tomorrowsTodos() {
+    var today = todayStr();
+    return data.todos.filter(function (t) { return t.date > today; });
+  }
   function find(id) {
     return data.todos.find(function (t) { return t.id === id; });
   }
@@ -614,6 +647,20 @@
       daily.forEach(function (t) { renderListItem(ul, t, false); });
     }
 
+    // 明日待办
+    var tul = document.getElementById('tomorrowList');
+    var ttitle = document.getElementById('tomorrowTitle');
+    var tmr = tomorrowsTodos();
+    if (tmr.length === 0) {
+      tul.style.display = 'none';
+      ttitle.style.display = 'none';
+    } else {
+      tul.style.display = '';
+      ttitle.style.display = '';
+      tul.innerHTML = '';
+      tmr.forEach(function (t) { renderListItem(tul, t, false); });
+    }
+
     var ful = document.getElementById('fixedList');
     var fempty = document.getElementById('fixedEmpty');
     ful.innerHTML = '';
@@ -635,7 +682,7 @@
   }
 
   // ----- 操作 -----
-  function addTodo(text, isFixed) {
+  function addTodo(text, isFixed, forTomorrow) {
     text = (text || '').trim();
     if (!text) return;
     var item = {
@@ -647,7 +694,7 @@
       data.fixed.push(item);
     } else {
       item.done = false;
-      item.date = todayStr();
+      item.date = forTomorrow ? tomorrowStr() : todayStr();
       data.todos.push(item);
     }
     save();
@@ -815,9 +862,25 @@
     rollover();
     renderDate();
 
+    // 今天/明天 切换
+    var forTomorrow = false;
+    var dayToggle = document.getElementById('dayToggle');
+    function setDayToggle(isTmr) {
+      forTomorrow = isTmr;
+      var btns = dayToggle.querySelectorAll('button');
+      btns[0].className = isTmr ? '' : 'on';
+      btns[1].className = isTmr ? 'on' : '';
+      document.getElementById('input').placeholder = isTmr ? '添加明日待办...' : '添加今日待办...';
+    }
+    dayToggle.addEventListener('click', function (e) {
+      var b = e.target.closest('button');
+      if (!b) return;
+      setDayToggle(b.getAttribute('data-day') === '1');
+    });
+
     document.getElementById('addBtn').addEventListener('click', function () {
       var input = document.getElementById('input');
-      addTodo(input.value, false);
+      addTodo(input.value, false, forTomorrow);
       input.value = '';
       input.focus();
     });
