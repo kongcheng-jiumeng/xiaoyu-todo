@@ -363,6 +363,40 @@
     border-radius: 8px; padding: 7px 10px; line-height: 1.4;
   }
   .section-title.st-goal .dot { background: #6ea8c8; }
+  .st-trophy { width: 15px; height: 15px; vertical-align: -2px; margin-right: 4px; }
+
+  /* 未来短期目标：高级感面板 */
+  .goal-panel {
+    background: linear-gradient(165deg, #fff7ea 0%, #ffedda 100%);
+    border: 1px solid #f6e2c8; border-radius: 22px;
+    padding: 12px; box-shadow: var(--shadow);
+  }
+  .goal-progress { display: flex; align-items: center; gap: 10px; margin: 2px 2px 10px; }
+  .gp-bar { flex: 1; height: 8px; border-radius: 6px; background: #f1e2cd; overflow: hidden; }
+  .gp-fill {
+    height: 100%; border-radius: 6px; width: 0;
+    background: linear-gradient(90deg, var(--accent-2), var(--accent));
+    transition: width .4s ease;
+  }
+  .gp-text { font-size: 11px; color: var(--muted); font-weight: 700; flex-shrink: 0; }
+
+  /* 星星勾选（目标专用） */
+  li .check.star { border: none; width: 26px; height: 26px; color: #e9d8c0; }
+  li .check.star svg { width: 24px; height: 24px; opacity: 1; }
+  li.done .check.star { background: none; color: #f2a93b; }
+
+  /* 拖拽排序 */
+  li .grip {
+    width: 22px; flex-shrink: 0; color: #d8c3ae; cursor: grab;
+    display: flex; align-items: center; justify-content: center;
+    touch-action: none; user-select: none; -webkit-user-select: none;
+  }
+  li .grip svg { width: 13px; height: 13px; }
+  li.dragging {
+    position: relative; z-index: 10; opacity: .95;
+    box-shadow: 0 14px 30px rgba(74, 58, 45, .28);
+  }
+  li.drop-hint { outline: 2px dashed var(--accent-2); outline-offset: -2px; }
 
   /* 安装到主屏幕提示条 */
   .install-bar {
@@ -478,15 +512,21 @@
   <div class="empty" id="fixedEmpty" style="display:none">还没有每日任务，添加每天要做的事吧</div>
 
   <div class="section-title st-goal">
-    <span class="dot"></span><span class="st-name">未来短期目标</span>
+    <span class="dot"></span><span class="st-name"><svg class="st-trophy" viewBox="0 0 24 24" fill="none" stroke="#f2a93b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v6a5 5 0 0 1-10 0V4z"/><path d="M7 6H4a3 3 0 0 0 3 3M17 6h3a3 3 0 0 1-3 3"/></svg>未来短期目标</span>
     <span class="st-sub">想做的事</span>
   </div>
-  <section class="add add-goal">
-    <input id="goalInput" type="text" placeholder="添加短期目标..." maxlength="200">
-    <button id="goalAddBtn" aria-label="添加">+</button>
-  </section>
-  <ul id="goalList"></ul>
-  <div class="empty" id="goalEmpty" style="display:none">还没有目标，写下想做的事吧</div>
+  <div class="goal-progress" id="goalProgress" style="display:none">
+    <div class="gp-bar"><div class="gp-fill" id="gpFill"></div></div>
+    <span class="gp-text" id="gpText">已完成 0 / 0</span>
+  </div>
+  <div class="goal-panel">
+    <section class="add add-goal">
+      <input id="goalInput" type="text" placeholder="添加短期目标..." maxlength="200">
+      <button id="goalAddBtn" aria-label="添加">+</button>
+    </section>
+    <ul id="goalList"></ul>
+    <div class="empty" id="goalEmpty" style="display:none">还没有目标，写下想做的事吧</div>
+  </div>
 </div>
 
 <!-- 未完成待办顺延询问弹窗 -->
@@ -625,10 +665,18 @@
   function renderListItem(ul, t, kind) {
     var li = document.createElement('li');
     if (t.done) li.className = 'done';
+    li.dataset.id = t.id;
+
+    var grip = document.createElement('div');
+    grip.className = 'grip';
+    grip.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.7"/><circle cx="15" cy="6" r="1.7"/><circle cx="9" cy="12" r="1.7"/><circle cx="15" cy="12" r="1.7"/><circle cx="9" cy="18" r="1.7"/><circle cx="15" cy="18" r="1.7"/></svg>';
+    grip.addEventListener('pointerdown', function (e) { startDrag(e, li, ul, kind, t); });
 
     var check = document.createElement('div');
-    check.className = 'check';
-    check.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
+    check.className = 'check' + (kind === 'goal' ? ' star' : '');
+    check.innerHTML = kind === 'goal'
+      ? '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.3 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8z"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
     check.addEventListener('click', function () {
       if (kind === 'fixed') toggleFixed(t.id);
       else if (kind === 'goal') toggleGoal(t.id);
@@ -655,11 +703,69 @@
       else removeDaily(t.id);
     });
 
+    li.appendChild(grip);
     li.appendChild(check);
     li.appendChild(text);
     li.appendChild(edit);
     li.appendChild(del);
     ul.appendChild(li);
+  }
+
+  // 拖拽交换：按住手柄拖到另一项上松手，两项交换位置
+  function startDrag(e, li, ul, kind, t) {
+    if (e.button && e.button !== 0) return;
+    e.preventDefault();
+    var startY = e.clientY;
+    var target = null;
+    li.classList.add('dragging');
+
+    function onMove(ev) {
+      var dy = ev.clientY - startY;
+      li.style.transform = 'translateY(' + dy + 'px)';
+      var r = li.getBoundingClientRect();
+      var cy = r.top + r.height / 2;
+      target = null;
+      Array.prototype.forEach.call(ul.children, function (el) {
+        el.classList.remove('drop-hint');
+      });
+      Array.prototype.forEach.call(ul.children, function (el) {
+        if (el === li) return;
+        var er = el.getBoundingClientRect();
+        if (cy > er.top && cy < er.bottom) {
+          target = el;
+          el.classList.add('drop-hint');
+        }
+      });
+    }
+    function finish() {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+      li.classList.remove('dragging');
+      li.style.transform = '';
+      Array.prototype.forEach.call(ul.children, function (el) {
+        el.classList.remove('drop-hint');
+      });
+    }
+    function onUp() {
+      finish();
+      if (!target) return;
+      var tid = target.dataset.id;
+      var arr = (kind === 'goal') ? data.goals : (kind === 'fixed' ? data.fixed : data.todos);
+      var ia = -1, ib = -1;
+      arr.forEach(function (x, i) {
+        if (x.id === t.id) ia = i;
+        if (x.id === tid) ib = i;
+      });
+      if (ia >= 0 && ib >= 0 && ia !== ib) {
+        var tmp = arr[ia]; arr[ia] = arr[ib]; arr[ib] = tmp;
+        save();
+        render();
+      }
+    }
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
   }
 
   // 点击编辑：文字变输入框，回车或点别处保存，Esc 取消
@@ -739,7 +845,17 @@
       fixedView.forEach(function (t) { renderListItem(ful, t, 'fixed'); });
     }
 
-    // 未来短期目标
+    // 未来短期目标：进度 + 列表
+    var gdone = data.goals.filter(function (g) { return g.done; }).length;
+    var gtotal = data.goals.length;
+    var gp = document.getElementById('goalProgress');
+    if (gtotal > 0) {
+      gp.style.display = 'flex';
+      document.getElementById('gpFill').style.width = Math.round(gdone / gtotal * 100) + '%';
+      document.getElementById('gpText').textContent = '已完成 ' + gdone + ' / ' + gtotal;
+    } else {
+      gp.style.display = 'none';
+    }
     var gul = document.getElementById('goalList');
     var gempty = document.getElementById('goalEmpty');
     gul.innerHTML = '';
