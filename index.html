@@ -145,6 +145,11 @@
     box-shadow: 0 4px 12px rgba(106, 180, 124, .35);
   }
   .add.add-fixed button:active { background: #5aa06c; }
+  .add.add-goal button {
+    background: linear-gradient(135deg, #93bcd8, #5e93bd);
+    box-shadow: 0 4px 12px rgba(110, 168, 200, .35);
+  }
+  .add.add-goal button:active { background: #4f81a8; }
 
   /* 板块标题 */
   .section-title { display: flex; align-items: center; gap: 8px; margin: 2px 2px 10px; }
@@ -344,6 +349,20 @@
     border-radius: 8px; flex-shrink: 0; transition: color .15s;
   }
   li .del:active { color: var(--danger); }
+  li .edit {
+    border: none; background: none; color: #dcc8b4; cursor: pointer;
+    width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: color .15s; padding: 0;
+  }
+  li .edit svg { width: 17px; height: 17px; }
+  li .edit:active { color: var(--accent-dark); }
+  li .edit-input {
+    flex: 1; min-width: 0; border: none; outline: none; font-size: 16px;
+    font-family: inherit; color: var(--text); background: #fbf3e9;
+    border-radius: 8px; padding: 7px 10px; line-height: 1.4;
+  }
+  .section-title.st-goal .dot { background: #6ea8c8; }
 
   /* 安装到主屏幕提示条 */
   .install-bar {
@@ -457,6 +476,17 @@
   </section>
   <ul id="fixedList"></ul>
   <div class="empty" id="fixedEmpty" style="display:none">还没有每日任务，添加每天要做的事吧</div>
+
+  <div class="section-title st-goal">
+    <span class="dot"></span><span class="st-name">未来短期目标</span>
+    <span class="st-sub">想做的事</span>
+  </div>
+  <section class="add add-goal">
+    <input id="goalInput" type="text" placeholder="添加短期目标..." maxlength="200">
+    <button id="goalAddBtn" aria-label="添加">+</button>
+  </section>
+  <ul id="goalList"></ul>
+  <div class="empty" id="goalEmpty" style="display:none">还没有目标，写下想做的事吧</div>
 </div>
 
 <!-- 未完成待办顺延询问弹窗 -->
@@ -522,16 +552,16 @@
   }
   function pad(n) { return (n < 10 ? '0' : '') + n; }
 
-  var data = { todos: [], fixed: [], history: {} };
+  var data = { todos: [], fixed: [], history: {}, goals: [] };
   function load() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) raw = localStorage.getItem('dailyWorkbench.v1'); // 旧版数据迁移
       if (raw) {
         var p = JSON.parse(raw);
-        data = { todos: p.todos || [], fixed: p.fixed || [], history: p.history || {} };
+        data = { todos: p.todos || [], fixed: p.fixed || [], history: p.history || {}, goals: p.goals || [] };
       }
-    } catch (e) { data = { todos: [], fixed: [], history: {} }; }
+    } catch (e) { data = { todos: [], fixed: [], history: {}, goals: [] }; }
   }
   function save() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -592,7 +622,7 @@
     data.history[today] = { items: items };
   }
 
-  function renderListItem(ul, t, isFixed) {
+  function renderListItem(ul, t, kind) {
     var li = document.createElement('li');
     if (t.done) li.className = 'done';
 
@@ -600,25 +630,63 @@
     check.className = 'check';
     check.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
     check.addEventListener('click', function () {
-      if (isFixed) toggleFixed(t.id); else toggleDaily(t.id);
+      if (kind === 'fixed') toggleFixed(t.id);
+      else if (kind === 'goal') toggleGoal(t.id);
+      else toggleDaily(t.id);
     });
 
     var text = document.createElement('div');
     text.className = 'text';
     text.textContent = t.text;
 
+    var edit = document.createElement('button');
+    edit.className = 'edit';
+    edit.setAttribute('aria-label', '编辑');
+    edit.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 3.5l4 4L8 20H4v-4L16.5 3.5z"/></svg>';
+    edit.addEventListener('click', function () { startEdit(li, t.ref || t); });
+
     var del = document.createElement('button');
     del.className = 'del';
     del.textContent = '\u00d7';
     del.setAttribute('aria-label', '删除');
     del.addEventListener('click', function () {
-      if (isFixed) removeFixed(t.id); else removeDaily(t.id);
+      if (kind === 'fixed') removeFixed(t.id);
+      else if (kind === 'goal') removeGoal(t.id);
+      else removeDaily(t.id);
     });
 
     li.appendChild(check);
     li.appendChild(text);
+    li.appendChild(edit);
     li.appendChild(del);
     ul.appendChild(li);
+  }
+
+  // 点击编辑：文字变输入框，回车或点别处保存，Esc 取消
+  function startEdit(li, t) {
+    var textDiv = li.querySelector('.text');
+    if (!textDiv || li.querySelector('.edit-input')) return;
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'edit-input';
+    input.maxLength = 200;
+    input.value = t.text;
+    textDiv.replaceWith(input);
+    input.focus();
+    try { input.setSelectionRange(input.value.length, input.value.length); } catch (e) {}
+    var finished = false;
+    function commit() {
+      if (finished) return;
+      finished = true;
+      var v = input.value.trim();
+      if (v && v !== t.text) { t.text = v; save(); }
+      render();
+    }
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') input.blur();
+      if (e.key === 'Escape') { finished = true; render(); }
+    });
   }
 
   function render() {
@@ -626,7 +694,7 @@
     var today = todayStr();
     var daily = todaysTodos();
     var fixedView = data.fixed.map(function (f) {
-      return { id: f.id, text: f.text, done: f.doneOn === today };
+      return { id: f.id, text: f.text, done: f.doneOn === today, ref: f };
     });
 
     var pending = daily.filter(function (t) { return !t.done; }).length
@@ -644,7 +712,7 @@
       empty.style.display = 'block';
     } else {
       empty.style.display = 'none';
-      daily.forEach(function (t) { renderListItem(ul, t, false); });
+      daily.forEach(function (t) { renderListItem(ul, t, 'daily'); });
     }
 
     // 明日待办
@@ -658,7 +726,7 @@
       tul.style.display = '';
       ttitle.style.display = '';
       tul.innerHTML = '';
-      tmr.forEach(function (t) { renderListItem(tul, t, false); });
+      tmr.forEach(function (t) { renderListItem(tul, t, 'daily'); });
     }
 
     var ful = document.getElementById('fixedList');
@@ -668,7 +736,18 @@
       fempty.style.display = 'block';
     } else {
       fempty.style.display = 'none';
-      fixedView.forEach(function (t) { renderListItem(ful, t, true); });
+      fixedView.forEach(function (t) { renderListItem(ful, t, 'fixed'); });
+    }
+
+    // 未来短期目标
+    var gul = document.getElementById('goalList');
+    var gempty = document.getElementById('goalEmpty');
+    gul.innerHTML = '';
+    if (data.goals.length === 0) {
+      gempty.style.display = 'block';
+    } else {
+      gempty.style.display = 'none';
+      data.goals.forEach(function (g) { renderListItem(gul, g, 'goal'); });
     }
 
     // 历史快照随每次渲染持久化
@@ -719,6 +798,31 @@
   }
   function removeFixed(id) {
     data.fixed = data.fixed.filter(function (t) { return t.id !== id; });
+    save();
+    render();
+  }
+
+  // ----- 未来短期目标 -----
+  function addGoal(text) {
+    text = (text || '').trim();
+    if (!text) return;
+    data.goals.push({
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      text: text,
+      done: false
+    });
+    save();
+    render();
+  }
+  function findGoal(id) {
+    return data.goals.find(function (g) { return g.id === id; });
+  }
+  function toggleGoal(id) {
+    var g = findGoal(id);
+    if (g) { g.done = !g.done; save(); render(); }
+  }
+  function removeGoal(id) {
+    data.goals = data.goals.filter(function (g) { return g.id !== id; });
     save();
     render();
   }
@@ -895,6 +999,15 @@
     });
     document.getElementById('fixedInput').addEventListener('keydown', function (e) {
       if (e.key === 'Enter') document.getElementById('fixedAddBtn').click();
+    });
+    document.getElementById('goalAddBtn').addEventListener('click', function () {
+      var input = document.getElementById('goalInput');
+      addGoal(input.value);
+      input.value = '';
+      input.focus();
+    });
+    document.getElementById('goalInput').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') document.getElementById('goalAddBtn').click();
     });
 
     // 左侧抽屉菜单
