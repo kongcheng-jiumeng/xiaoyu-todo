@@ -296,7 +296,10 @@
     width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
     font-size: 12px; font-weight: 800;
+    cursor: pointer; transition: transform .1s;
   }
+  .day-item .st:active { transform: scale(.85); }
+  .day-hint { font-size: 11px; color: #c9ac8e; margin: 2px 0 4px; }
   .day-item .st.ok { background: #e4f2e7; color: var(--green); }
   .day-item .st.no { background: #fdeae4; color: var(--danger); }
   .day-item .tx { flex: 1; font-size: 14px; }
@@ -609,9 +612,9 @@
     data.todos.forEach(function (t) {
       if (t.date < today && !data.history[t.date]) {
         var items = data.todos.filter(function (x) { return x.date === t.date; })
-          .map(function (x) { return { text: x.text, done: !!x.done, type: 'daily' }; });
+          .map(function (x) { return { id: x.id, text: x.text, done: !!x.done, type: 'daily' }; });
         data.fixed.forEach(function (f) {
-          if (f.doneOn === t.date) items.push({ text: f.text, done: true, type: 'fixed' });
+          if (f.doneOn === t.date) items.push({ id: f.id, text: f.text, done: true, type: 'fixed' });
         });
         data.history[t.date] = { items: items };
       }
@@ -650,10 +653,10 @@
   function snapshotToday() {
     var today = todayStr();
     var items = todaysTodos().map(function (t) {
-      return { text: t.text, done: !!t.done, type: 'daily' };
+      return { id: t.id, text: t.text, done: !!t.done, type: 'daily' };
     });
     data.fixed.forEach(function (f) {
-      items.push({ text: f.text, done: f.doneOn === today, type: 'fixed' });
+      items.push({ id: f.id, text: f.text, done: f.doneOn === today, type: 'fixed' });
     });
     data.history[today] = { items: items };
   }
@@ -1061,15 +1064,46 @@
     } else if (!rec.items.length) {
       html += '<div class="day-empty">这一天没有添加任务</div>';
     } else {
-      html += rec.items.map(function (it) {
+      html += '<div class="day-hint">点击 ✓ / ✗ 可修改完成状态</div>';
+      html += rec.items.map(function (it, idx) {
         return '<div class="day-item">'
-          + '<div class="st ' + (it.done ? 'ok' : 'no') + '">' + (it.done ? '✓' : '✗') + '</div>'
+          + '<div class="st ' + (it.done ? 'ok' : 'no') + '" data-idx="' + idx + '">' + (it.done ? '✓' : '✗') + '</div>'
           + '<div class="tx' + (it.done ? '' : ' und') + '">' + escapeHtml(it.text) + '</div>'
           + '<div class="tag">' + (it.type === 'fixed' ? '固定' : '今日') + '</div>'
           + '</div>';
       }).join('');
     }
     card.innerHTML = html;
+
+    // 点击状态标记切换完成状态
+    Array.prototype.forEach.call(card.querySelectorAll('.day-item .st'), function (el) {
+      el.addEventListener('click', function () {
+        toggleHistItem(selDate, parseInt(el.dataset.idx, 10));
+      });
+    });
+  }
+
+  // 日历里修改某天的任务完成状态
+  function toggleHistItem(ds, idx) {
+    var rec = dayRecord(ds);
+    if (!rec || !rec.items[idx]) return;
+    var it = rec.items[idx];
+    var today = todayStr();
+    if (ds === today && it.id) {
+      // 今天：直接改实时数据，快照会随之刷新
+      if (it.type === 'fixed') {
+        toggleFixed(it.id);
+      } else {
+        toggleDaily(it.id);
+      }
+      renderCalendar();
+      renderDayCard();
+      return;
+    }
+    it.done = !it.done;
+    save();
+    renderCalendar();
+    renderDayCard();
   }
 
   // ----- 初始化 -----
