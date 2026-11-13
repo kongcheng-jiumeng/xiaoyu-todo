@@ -310,6 +310,60 @@
   }
   .day-empty { color: var(--muted); font-size: 13px; padding: 10px 0; }
 
+  /* 今日提升 */
+  .boost-card {
+    background: linear-gradient(160deg, #fff6e9, #ffedda);
+    border: 1px solid #f6e2c8; border-radius: 20px;
+    padding: 18px 16px; box-shadow: var(--shadow);
+  }
+  .bc-tag {
+    font-size: 11px; font-weight: 700; color: #fff;
+    background: linear-gradient(135deg, var(--accent-2), var(--accent));
+    border-radius: 10px; padding: 3px 9px; display: inline-block;
+  }
+  .bc-title { font-size: 19px; font-weight: 800; margin: 10px 0 8px; }
+  .bc-content { font-size: 14px; line-height: 1.8; color: #5a4a3c; }
+  .bc-actions { display: flex; gap: 10px; margin-top: 14px; }
+  .bc-btn {
+    flex: 1; border: none; border-radius: 12px; padding: 11px 0;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    transition: transform .1s;
+  }
+  .bc-btn:active { transform: scale(.96); }
+  .bc-btn.learn {
+    background: linear-gradient(135deg, var(--accent-2), var(--accent));
+    color: #fff; box-shadow: 0 4px 12px rgba(230, 147, 90, .35);
+  }
+  .bc-btn.learned { background: #e4f2e7; color: var(--green); }
+  .bc-btn.swap { background: #fff; color: var(--accent-dark); border: 1.5px solid #f0dcc3; }
+  .boost-streak { display: flex; gap: 10px; margin: 14px 0; }
+  .streak-box {
+    flex: 1; background: var(--card); border-radius: 14px; padding: 12px;
+    text-align: center; box-shadow: var(--shadow);
+  }
+  .streak-box .n { font-size: 24px; font-weight: 800; color: var(--accent-dark); }
+  .streak-box .t { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .boost-cats { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 12px; }
+  .cat-chip {
+    border: 1.5px solid #f0dcc3; background: #fff; color: var(--muted);
+    font-size: 12.5px; font-weight: 700; border-radius: 12px;
+    padding: 7px 12px; cursor: pointer; font-family: inherit;
+  }
+  .cat-chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .k-card { background: var(--card); border-radius: 16px; box-shadow: var(--shadow); padding: 13px 15px; margin-bottom: 10px; }
+  .k-head { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .k-tag { font-size: 10px; font-weight: 700; border-radius: 8px; padding: 2px 7px; background: #faf1e6; color: var(--muted); flex-shrink: 0; }
+  .k-title { font-size: 14.5px; font-weight: 700; flex: 1; }
+  .k-arrow { color: var(--muted); font-size: 15px; transition: transform .2s; }
+  .k-card.open .k-arrow { transform: rotate(90deg); }
+  .k-body { display: none; font-size: 13.5px; line-height: 1.7; color: #5a4a3c; padding-top: 9px; }
+  .k-card.open .k-body { display: block; }
+  .cal-cell { position: relative; }
+  .cal-cell .learn-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--accent); position: absolute; top: 5px; right: 6px;
+  }
+
   @media (max-width: 350px) {
     .title-row h1 { font-size: 17px; }
     .art-wrap { width: 78px; height: 72px; }
@@ -557,6 +611,16 @@
     <div class="mi-text">任务完成情况</div>
     <div class="mi-arrow">›</div>
   </div>
+  <div class="menu-item" id="miBoost">
+    <div class="mi-icon">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 6.5C10.5 4.9 8.3 4 6 4C4.9 4 3.9 4.2 3 4.5V19C3.9 18.7 4.9 18.5 6 18.5C8.3 18.5 10.5 19.4 12 21C13.5 19.4 15.7 18.5 18 18.5C19.1 18.5 20.1 18.7 21 19V4.5C20.1 4.2 19.1 4 18 4C15.7 4 13.5 4.9 12 6.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M12 6.5V21" stroke="currentColor" stroke-width="2"/>
+      </svg>
+    </div>
+    <div class="mi-text">今日提升</div>
+    <div class="mi-arrow">›</div>
+  </div>
 </aside>
 
 <!-- 任务完成情况页面 -->
@@ -581,6 +645,23 @@
   </div>
 </div>
 
+<!-- 今日提升页面 -->
+<div class="page" id="boostPage">
+  <div class="page-inner">
+    <div class="page-head">
+      <button class="back-btn" id="boostBackBtn" aria-label="返回">‹</button>
+      <div class="page-title">今日提升</div>
+    </div>
+    <div class="boost-card" id="boostDaily"></div>
+    <div class="boost-streak">
+      <div class="streak-box"><div class="n" id="streakNum">0</div><div class="t">连续学习天数</div></div>
+      <div class="streak-box"><div class="n" id="totalNum">0</div><div class="t">累计学习天数</div></div>
+    </div>
+    <div class="boost-cats" id="boostCats"></div>
+    <div id="boostList"></div>
+  </div>
+</div>
+
 <script>
 (function () {
   var STORAGE_KEY = 'dailyWorkbench.v2';
@@ -591,16 +672,16 @@
   }
   function pad(n) { return (n < 10 ? '0' : '') + n; }
 
-  var data = { todos: [], fixed: [], history: {}, goals: [] };
+  var data = { todos: [], fixed: [], history: {}, goals: [], boost: { learned: {} } };
   function load() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) raw = localStorage.getItem('dailyWorkbench.v1'); // 旧版数据迁移
       if (raw) {
         var p = JSON.parse(raw);
-        data = { todos: p.todos || [], fixed: p.fixed || [], history: p.history || {}, goals: p.goals || [] };
+        data = { todos: p.todos || [], fixed: p.fixed || [], history: p.history || {}, goals: p.goals || [], boost: p.boost || { learned: {} } };
       }
-    } catch (e) { data = { todos: [], fixed: [], history: {}, goals: [] }; }
+    } catch (e) { data = { todos: [], fixed: [], history: {}, goals: [], boost: { learned: {} } }; }
   }
   function save() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -1030,7 +1111,8 @@
           cell.addEventListener('click', function () { selectDate(ds2); });
         })(ds);
       }
-      cell.innerHTML = '<div class="d">' + d + '</div><div class="mark">' + mark + '</div>';
+      cell.innerHTML = '<div class="d">' + d + '</div><div class="mark">' + mark + '</div>'
+        + (boostLearned(ds) ? '<div class="learn-dot"></div>' : '');
       grid.appendChild(cell);
     }
   }
@@ -1106,6 +1188,147 @@
     renderDayCard();
   }
 
+  // ----- 今日提升：嵌入式知识库 -----
+  var BOOST = [
+    { c: 'C语言', t: 'volatile 关键字', d: '告诉编译器这个变量随时会被意外改变，禁止优化，每次都从内存重新读取。三大典型场景：中断服务程序与主循环共享的变量、内存映射的外设寄存器、多任务共享的标志位。面试高频考点。' },
+    { c: 'C语言', t: 'static 的三种用法', d: '修饰局部变量：生命周期延长到程序结束，但作用域不变；修饰全局变量/函数：作用域限制在当前文件，避免命名冲突。后者是大型嵌入式工程模块化封装的基础，_driver 内部函数加 static 是好习惯。' },
+    { c: 'C语言', t: '指针与数组的区别', d: '数组名是地址常量，不能自增自减；指针是变量，可以运算。sizeof(数组名)得到整个数组大小，sizeof(指针)只得到 4 或 8 字节。数组作为函数参数传递时会退化为指针，这是很多 bug 的来源。' },
+    { c: 'C语言', t: '内存五大分区', d: '栈（局部变量，自动管理）、堆（malloc 手动管理）、全局/静态区、常量区、代码区。嵌入式栈空间通常只有几 KB，大数组不要放局部变量，警惕递归过深导致栈溢出——它往往不报错而是出现玄学死机。' },
+    { c: 'C语言', t: '位运算实战', d: '置位 a |= (1<<n)；清零 a &= ~(1<<n)；翻转 a ^= (1<<n)；判断位 if ((a>>n) & 1)。操作寄存器必用这套，位运算比乘除法快得多，是嵌入式的看家本领。' },
+    { c: 'C语言', t: '结构体对齐', d: '成员按自身大小对齐，总大小是最大成员的整数倍，目的是让 CPU 访问效率最高。可用 #pragma pack(1) 取消对齐省内存。通信协议帧结构要注意收发两端对齐方式一致，否则解析错乱。' },
+    { c: 'C语言', t: '大小端判断', d: '小端：低字节存低地址（ARM、x86 默认）；大端：低字节存高地址（网络字节序）。经典判断方法：union { int i; char c; }，i=1 时若 c==1 则是小端。协议解析时记得统一字节序（htonl/ntohl）。' },
+    { c: 'C语言', t: '回调函数', d: '把函数指针作为参数传给底层代码，让底层在合适的时机"回头调用"你的逻辑，实现解耦。HAL 库的 HAL_UART_RxCpltCallback、操作系统的定时器回调都是这个思想，驱动和框架设计的核心手段。' },
+    { c: '单片机', t: '推挽与开漏输出', d: '推挽输出高低电平都主动驱动，能力强；开漏只能拉低，高电平靠外部上拉电阻。开漏典型用途：I2C 总线、电平转换、线与逻辑。配置 GPIO 时根据外设需求选择输出模式。' },
+    { c: '单片机', t: 'NVIC 中断优先级', d: '抢占优先级高的中断可以打断正在执行的低优先级中断（嵌套）；响应优先级只决定同时挂起时谁先执行。用 FreeRTOS 时注意 configMAX_SYSCALL_INTERRUPT_PRIORITY：比它高的中断里不能调用系统 API。' },
+    { c: '单片机', t: '定时器 PWM 原理', d: '计数器从 0 数到自动重装值 ARR，比较寄存器 CCR 匹配时按配置置位/复位/翻转输出。占空比 = CCR / (ARR+1)。电机调速、LED 呼吸灯、舵机角度控制全靠它，输出比较是定时器最常用的功能之一。' },
+    { c: '单片机', t: 'ADC 采样注意事项', d: '采样时间要足够长让内部采样电容充满（信号源阻抗越大越要加长）；参考电压稳定是精度的生命线；软件做 16 次均值滤波能显著去抖。高频采集标配 DMA + ADC 循环模式，CPU 几乎零占用。' },
+    { c: '单片机', t: '看门狗', d: '独立看门狗 IWDG 由内部低速时钟驱动，主时钟死机也能复位系统；窗口看门狗 WWDG 要求喂狗时间落在窗口区间内，喂早了也复位，能发现"程序跑飞后狂转"的异常。产品级代码必开看门狗，这是最后一道防线。' },
+    { c: '单片机', t: 'DMA 的价值', d: '外设与内存之间搬数据完全不占 CPU，搬完发个中断通知。ADC 连续采集、串口大数据量收发、SPI 刷屏都是 DMA 的舞台。开了 DMA 之后 CPU 占用率断崖式下降，这是"会用"和"用好"单片机的分水岭。' },
+    { c: '单片机', t: '低功耗模式', d: '睡眠（只停 CPU）、停止（时钟全停、SRAM 保持、靠外部中断唤醒，电流可降到 uA 级）、待机（只剩备份域，唤醒相当于复位）。进低功耗前要配好唤醒源，物联网设备的续航就靠这套组合拳。' },
+    { c: '单片机', t: '启动流程', d: '上电后从向量表取栈顶指针和复位向量 → 复位函数里配时钟（SystemInit）→ 初始化数据段、清零 bss 段 → 跳转 main。看懂启动文件 .s 里的这段流程，是理解"程序怎么跑起来"的必修课，面试也常问。' },
+    { c: '通信协议', t: 'UART 帧格式', d: '总线空闲高电平；起始位拉低，5~9 位数据，可选校验位，停止位拉高。双方波特率一致是前提。乱码三大排查点：波特率不匹配、没共地（GND）、数据位/停止位配置不一致。逻辑分析仪是排查利器。' },
+    { c: '通信协议', t: 'I2C 核心时序', d: '起始条件：SCL 高时 SDA 下跳；停止条件：SCL 高时 SDA 上跳。每字节后第 9 个时钟从机拉低 SDA 表示应答（ACK）。开漏 + 上拉支持多设备总线，7 位地址理论上可挂 127 个从机。' },
+    { c: '通信协议', t: 'SPI 四种模式', d: 'CPOL 决定空闲时钟电平，CPHA 决定采样在第一个还是第二个边沿，组合出 Mode 0~3。主从机模式必须匹配，不匹配的典型现象：数据错位或读到全 0xFF。优势是高速全双工，缺点是线多且无应答机制。' },
+    { c: '通信协议', t: 'CAN 总线仲裁', d: '显性 0、隐性 1，多节点同时发送时"线与"特性让 ID 小的报文自动赢得仲裁，输的自动转接收，实现无破坏的优先级竞争。差分传输抗干扰强，两端各一个 120Ω 终端电阻。汽车、工业现场的标配。' },
+    { c: '通信协议', t: '波特率与误码', d: '串口 115200 在 10 位帧格式下实际吞吐约 11.5KB/s。接收方在位中心采样，双方时钟误差累计超过半个位宽就会误码——波特率越高对时钟精度要求越苛刻，这也是为什么高波特率通信建议用高精度晶振。' },
+    { c: '通信协议', t: '主从架构的本质', d: 'I2C/SPI 都是主从协议：时钟线永远由主机产生，从机被动响应。想多主？I2C 支持多主仲裁，SPI 可以片选轮询。从机固件的核心写法是"状态机解析帧"：收字节→状态迁移→帧完整→校验→处理。' },
+    { c: '通信协议', t: '上拉电阻的作用', d: '开漏输出无法主动输出高电平，靠上拉电阻把总线"拉回"高。阻值影响上升时间：太大边沿变慢限制速度，太小增加功耗。I2C 标准模式典型 4.7kΩ，快速模式 2.2kΩ 左右。' },
+    { c: '通信协议', t: '同步与异步通信', d: '异步（UART）靠双方约好波特率 + 帧结构对齐；同步（SPI/I2C）有时钟线随数据走，不怕速率漂移。选型经验：板内芯片间高速用 SPI，多设备低速用 I2C，长距离异步用 UART，工业可靠传输用 CAN。' },
+    { c: 'RTOS', t: '任务状态机', d: '就绪/运行/阻塞/挂起四态循环：任务阻塞等事件（延时、信号量、队列），事件到来进就绪，调度器选最高优先级的就绪任务上 CPU。理解了状态转换图，就理解了 RTOS 一半的行为。' },
+    { c: 'RTOS', t: '信号量 vs 互斥量', d: '二值信号量做同步（事件通知："数据到了"）；互斥量做保护（谁上锁谁解锁，管"资源归谁"）。互斥量带优先级继承，保护临界资源首选它。计数信号量管理多实例资源池（如 5 个连接名额）。' },
+    { c: 'RTOS', t: '优先级翻转', d: '低优先级任务持有锁，高优先级任务等锁，中优先级任务趁机抢占持锁者——高优先级被间接卡死。互斥量的优先级继承让持锁者临时继承等待者的优先级，FreeRTOS 互斥量自带此机制，这是经典面试题。' },
+    { c: 'RTOS', t: '调度器与时间片', d: '抢占式调度：随时让最高优先级就绪任务上 CPU；同优先级任务间按时间片轮转。CPU 空闲时空闲任务（idle）兜底，可以往里面挂低功耗钩子函数。configUSE_TIME_SLICING 控制轮转开关。' },
+    { c: 'RTOS', t: '上下文切换', d: '保存当前任务的寄存器现场到它的栈，恢复下一个任务的栈和寄存器，在 PendSV 中断里完成。切换本身耗 CPU，任务太多或切换太频繁会显著吃掉性能——任务数量要克制，该合并就合并。' },
+    { c: 'RTOS', t: '临界区保护三板斧', d: '关中断（taskENTER_CRITICAL）适合极短代码段；关调度器（vTaskSuspendAll）防切换但不防中断；互斥量适合可能阻塞的长区段。原则：临界区越短越好，绝不在里面做耗时操作或调用阻塞 API。' },
+    { c: 'RTOS', t: '任务栈的讲究', d: '每个任务独立栈，栈溢出是最隐蔽的 bug（踩别人内存，死机位置随机）。用 uxTaskGetStackHighWaterMark() 查水位线，按最坏调用深度 + 中断嵌套留余量。新手先给足（如 512 字），跑稳后再精调。' },
+    { c: 'RTOS', t: '队列与解耦', d: '队列是线程安全的消息传递，中断里要用带 FromISR 后缀的 API。生产者消费者模型靠队列解耦：采集任务狂发数据，处理任务按自己的节奏消化，互相不用等——这是嵌入式架构设计的核心思想。' },
+    { c: '嵌入式Linux', t: '交叉编译', d: '在 x86 主机上编译出 ARM 架构的可执行文件，工具链前缀如 arm-linux-gnueabihf-gcc。板子和主机的架构、字长、库都可能不同，所以不能直接用本机 gcc。Buildroot/Yocto 是构建整个嵌入式系统的主流框架。' },
+    { c: '嵌入式Linux', t: '设备树', d: '硬件描述文件（.dts）把"板子有什么外设、接到哪个引脚/地址"从内核代码里分离出来，一份驱动适配不同板子只改设备树。看懂节点、compatible 匹配、pinctrl 配置，是移植驱动的第一步。' },
+    { c: '嵌入式Linux', t: 'Bootloader 启动流程', d: 'U-Boot 两阶段：SPL 先初始化 DDR 等最小环境，主阶段再初始化外设、把内核镜像和设备树读进内存、传 bootargs 后跳转内核，内核最后挂载根文件系统启动 init。知道卡在哪一环，是调试开机问题的关键。' },
+    { c: '嵌入式Linux', t: '字符设备驱动', d: '实现 file_operations 结构体（open/read/write/ioctl），注册后应用层通过 /dev/xxx 节点像操作文件一样访问硬件；copy_to_user/copy_from_user 负责内核态和用户态间的安全数据搬运。驱动入门的标准姿势。' },
+    { c: '嵌入式Linux', t: '设备模型与 sysfs', d: '总线-设备-驱动三级模型自动匹配（platform 总线靠 compatible 字符串），匹配成功 probe 被调用。sysfs 把设备和驱动暴露成 /sys 下的目录和属性，用户态直接 cat/echo 就能交互——"一切皆文件"的体现。' },
+    { c: '嵌入式Linux', t: 'init 进程与 busybox', d: '内核启动的第一个用户进程 PID=1，负责拉起所有服务；嵌入式常用 busybox 一个几 MB 的程序提供精简版 init、sh、ls 等上百个工具，撑起整个用户态基础环境。根文件系统的内容决定了系统"长什么样"。' },
+    { c: '嵌入式Linux', t: 'proc 与 debugfs', d: '/proc 自描述进程和内核状态（/proc/interrupts 看中断、/proc/iomem 看内存映射），debugfs 暴露调试接口。开发阶段用它直接读写芯片寄存器和驱动变量，比改代码、编译、烧录快十倍。' },
+    { c: '嵌入式Linux', t: '调试三板斧', d: 'printf 大法 + printk 分级日志；gdb + gdbserver 网络远程断点调试；JTAG/SWD 配 J-Link/OpenOCD 在线看寄存器。性能问题用 perf/ftrace 定位热点。先会三板斧，再谈高级技巧。' },
+    { c: '物联网', t: 'MQTT 为什么是主流', d: '发布/订阅模型解耦收发双方，用主题（topic）路由消息；报文头最小仅 2 字节，适合窄带环境；三种 QoS：0 最多一次、1 至少一次、2 恰好一次；长连接 + 心跳保活支持弱网自动重连。传感器上报和命令下发都靠它。' },
+    { c: '物联网', t: 'NB-IoT vs LoRa', d: 'NB-IoT 跑运营商基站（授权频段），广覆盖深穿透，按流量计费，适合水电表类；LoRa 自建网关（非授权频段），私有部署、数据自主，常见于农业和厂区。选型看部署成本和数据主权要求。' },
+    { c: '物联网', t: 'TCP 粘包', d: 'TCP 是字节流，没有消息边界：两次 send 可能被一次 recv 收到（粘包），一次 send 也可能被拆开（半包）。解法是在应用层定界：定长、分隔符、长度前缀（最通用）。串口透传模块同样有这个问题。' },
+    { c: '物联网', t: 'CoAP 协议', d: '精简版 HTTP 跑在 UDP 上，报文头只有 4 字节，支持 DTLS 加密；请求/响应模型用 REST 风格（GET/POST/PUT/DELETE）。超低功耗受限设备用它，智能家居新标准 Matter 基于 IP 也在兴起。' },
+    { c: '物联网', t: '边缘计算', d: '数据在靠近设备的网关上就地处理：协议转换、过滤聚合、本地决策，只把有价值的数据上云。三大价值：断网可用、实时响应、省流量。网关上通常跑 Linux + 容器化的边缘程序。' },
+    { c: '物联网', t: 'OTA 升级原理', d: '双分区（A/B）机制：新固件下载到备用分区，校验（CRC/签名）通过后切换启动标志，重启进入新分区，出错自动回滚。固件走 HTTP/MQTT 下发，差分升级只传变化部分省流量。产品没有 OTA 等于每次升级都要上门。' },
+    { c: '物联网', t: 'TLS 加密链路', d: '非对称加密完成握手并协商出对称密钥，之后用对称加密传输（快）；证书体系验证服务器身份，防中间人攻击。嵌入式常用 mbedTLS/wolfSSL，密钥存安全区（SE 芯片）才安全。' },
+    { c: '物联网', t: '低功耗设计链路', d: '传感器周期采样 + RTC 定时唤醒，数据缓存后批量上报；关掉不用的外设时钟、降主频、进停机模式；网络侧用 PSM/eDRX 让模组深睡。硬件 + 软件 + 协议三层配合，纽扣电池跑一年不是神话。' }
+  ];
+  var boostState = { offset: 0, cat: '全部' };
+
+  function boostLearned(ds) {
+    return !!(data.boost && data.boost.learned && data.boost.learned[ds]);
+  }
+  function fmtDate(d) {
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+  function boostStreak() {
+    var s = 0;
+    var d = new Date();
+    if (!boostLearned(fmtDate(d))) d.setDate(d.getDate() - 1); // 今天没学则从昨天起算
+    while (boostLearned(fmtDate(d))) { s++; d.setDate(d.getDate() - 1); }
+    return s;
+  }
+
+  function openBoost() {
+    closeDrawer();
+    boostState.offset = 0;
+    document.getElementById('boostPage').classList.add('open');
+    renderBoost();
+  }
+  function closeBoost() {
+    document.getElementById('boostPage').classList.remove('open');
+  }
+
+  function renderBoost() {
+    var today = todayStr();
+    var idx = (function () {
+      var n = new Date();
+      var start = new Date(n.getFullYear(), 0, 0);
+      var doy = Math.floor((n - start) / 86400000);
+      return (doy + boostState.offset) % BOOST.length;
+    })();
+    var k = BOOST[idx];
+    var learned = boostLearned(today);
+
+    document.getElementById('boostDaily').innerHTML =
+      '<span class="bc-tag">' + escapeHtml(k.c) + '</span>'
+      + '<div class="bc-title">' + escapeHtml(k.t) + '</div>'
+      + '<div class="bc-content">' + escapeHtml(k.d) + '</div>'
+      + '<div class="bc-actions">'
+      + '<button class="bc-btn swap" id="boostSwap">换一个</button>'
+      + '<button class="bc-btn ' + (learned ? 'learned' : 'learn') + '" id="boostLearnBtn">' + (learned ? '今日已学 ✓' : '标记已学') + '</button>'
+      + '</div>';
+
+    document.getElementById('streakNum').textContent = boostStreak();
+    document.getElementById('totalNum').textContent = Object.keys(data.boost.learned).length;
+
+    document.getElementById('boostSwap').addEventListener('click', function () {
+      boostState.offset++;
+      renderBoost();
+    });
+    document.getElementById('boostLearnBtn').addEventListener('click', function () {
+      data.boost.learned[todayStr()] = true;
+      save();
+      renderBoost();
+    });
+
+    // 分类
+    var cats = ['全部'];
+    BOOST.forEach(function (b) {
+      if (cats.indexOf(b.c) < 0) cats.push(b.c);
+    });
+    document.getElementById('boostCats').innerHTML = cats.map(function (c) {
+      return '<button class="cat-chip' + (boostState.cat === c ? ' on' : '') + '" data-cat="' + escapeHtml(c) + '">' + escapeHtml(c) + '</button>';
+    }).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('#boostCats .cat-chip'), function (chip) {
+      chip.addEventListener('click', function () {
+        boostState.cat = chip.dataset.cat;
+        renderBoost();
+      });
+    });
+
+    // 知识列表
+    var list = BOOST.filter(function (b) { return boostState.cat === '全部' || b.c === boostState.cat; });
+    document.getElementById('boostList').innerHTML = list.map(function (b, i) {
+      return '<div class="k-card" data-i="' + i + '">'
+        + '<div class="k-head"><span class="k-tag">' + escapeHtml(b.c) + '</span>'
+        + '<span class="k-title">' + escapeHtml(b.t) + '</span><span class="k-arrow">›</span></div>'
+        + '<div class="k-body">' + escapeHtml(b.d) + '</div>'
+        + '</div>';
+    }).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('#boostList .k-head'), function (h) {
+      h.addEventListener('click', function () {
+        h.parentElement.classList.toggle('open');
+      });
+    });
+  }
+
   // ----- 初始化 -----
   function init() {
     load();
@@ -1160,7 +1383,9 @@
     document.getElementById('menuBtn').addEventListener('click', openDrawer);
     document.getElementById('drawerMask').addEventListener('click', closeDrawer);
     document.getElementById('miHistory').addEventListener('click', openHistory);
+    document.getElementById('miBoost').addEventListener('click', openBoost);
     document.getElementById('backBtn').addEventListener('click', closeHistory);
+    document.getElementById('boostBackBtn').addEventListener('click', closeBoost);
     document.getElementById('prevMonth').addEventListener('click', function () {
       viewMonth--;
       if (viewMonth < 0) { viewMonth = 11; viewYear--; }
